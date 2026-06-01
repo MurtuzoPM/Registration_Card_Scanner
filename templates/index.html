@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registration Card Scanner</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🪪</text></svg>">
+</head>
+<body>
+
+    <div class="app-container">
+
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-left">
+                <div class="logo-icon">
+                    <i class="fas fa-id-card"></i>
+                </div>
+                <div class="header-title">
+                    <h1>Registration Card Scanner</h1>
+                    <p>Extract structured data from Tajikistan registration cards</p>
+                </div>
+            </div>
+            <div id="statusBadge" class="status-badge disconnected">
+                <span class="status-dot"></span> Checking...
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <div class="main-grid">
+
+            <!-- Left Column: Upload & Scan -->
+            <div>
+                <div class="card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-cloud-upload-alt"></i> Upload Card Image</h2>
+                    </div>
+                    <div class="card-body">
+                        <!-- Upload Zone -->
+                        <div id="uploadZone" class="upload-zone">
+                            <div class="upload-content">
+                                <div class="upload-icon">
+                                    <i class="fas fa-file-image"></i>
+                                </div>
+                                <h3>Upload Registration Card</h3>
+                                <p>Drag &amp; drop your image here, or click to browse</p>
+                                <button class="upload-btn" type="button">
+                                    <i class="fas fa-folder-open"></i> Choose Image
+                                </button>
+                                <p class="formats">Supports: JPEG, PNG, WebP, TIFF, BMP (max 50 MB)</p>
+                            </div>
+                            <img id="imagePreview" class="image-preview" alt="Uploaded card preview">
+                            <input id="fileInput" type="file" accept="image/*" hidden>
+                        </div>
+
+                        <!-- Scan / Reset Actions -->
+                        <div class="scan-actions">
+                            <button id="scanBtn" class="scan-btn" disabled>
+                                <i class="fas fa-search"></i> Scan Card
+                            </button>
+                            <button id="resetBtn" class="reset-btn" style="display:none;">
+                                <i class="fas fa-undo"></i> Reset
+                            </button>
+                        </div>
+
+                        <!-- Processing Spinner -->
+                        <div id="spinner" class="spinner">
+                            <div class="spinner-icon"></div>
+                            <div class="spinner-text">Analyzing registration card...</div>
+                            <div class="progress-container">
+                                <div class="progress-bar">
+                                    <div class="progress-fill"></div>
+                                </div>
+                                <div id="progressSteps" class="progress-steps">
+                                    <span class="active">Upload</span>
+                                    <span>OCR</span>
+                                    <span>Parse</span>
+                                    <span>Extract</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Fields Reference -->
+                        <div class="fields-reference">
+                            <h3><i class="fas fa-list"></i> Target Fields</h3>
+                            <div class="fields-reference-list">
+                                <div class="fields-reference-item">
+                                    <span class="num">1</span> Registration Card #
+                                </div>
+                                <div class="fields-reference-item">
+                                    <span class="num">2</span> Passport #
+                                </div>
+                                <div class="fields-reference-item">
+                                    <span class="num">3</span> Citizenship
+                                </div>
+                                <div class="fields-reference-item">
+                                    <span class="num">4</span> Name &amp; Surname
+                                </div>
+                                <div class="fields-reference-item">
+                                    <span class="num">5</span> Date of Registration
+                                </div>
+                                <div class="fields-reference-item">
+                                    <span class="num">6</span> PRS MIA RT
+                                </div>
+                                <div class="fields-reference-item">
+                                    <span class="num">7</span> Valid Until
+                                </div>
+                                <div class="fields-reference-item">
+                                    <span class="num">8</span> Serial/Control #
+                                </div>
+                                <div class="fields-reference-item">
+                                    <span class="num">9</span> MIA
+                                </div>
+                                <div class="fields-reference-item">
+                                    <span class="num">10</span> Place of Residence
+                                </div>
+                                <div class="fields-reference-item">
+                                    <span class="num">11</span> Residence (cont.)
+                                </div>
+                                <div class="fields-reference-item">
+                                    <span class="num">12</span> Inspector
+                                </div>
+                                <div class="fields-reference-item">
+                                    <span class="num">13</span> Date of Reg./Extension
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Results -->
+            <div>
+                <div class="card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-table"></i> Extraction Results</h2>
+                    </div>
+                    <div class="card-body">
+                        <!-- Placeholder -->
+                        <div id="placeholder" class="placeholder">
+                            <div class="placeholder-icon">
+                                <i class="fas fa-id-card"></i>
+                            </div>
+                            <h3>No Data Yet</h3>
+                            <p>Upload a registration card image and click "Scan Card" to extract the fields</p>
+                        </div>
+
+                        <!-- Results -->
+                        <div id="resultsContainer" class="results-container">
+                            <div class="results-header">
+                                <span style="font-size:0.875rem;font-weight:600;color:var(--slate-700);">
+                                    <i class="fas fa-check-circle" style="color:var(--success);"></i> Scan Complete
+                                </span>
+                                <span id="confidenceBadge" class="confidence-badge">
+                                    <i class="fas fa-chart-line"></i> Confidence: --
+                                </span>
+                            </div>
+
+                            <div id="fieldsGrid" class="fields-grid">
+                                <!-- Field cards injected by JS -->
+                            </div>
+
+                            <!-- Export Actions -->
+                            <div class="export-actions">
+                                <button id="copyBtn" class="export-btn primary">
+                                    <i class="fas fa-copy"></i> Copy JSON
+                                </button>
+                                <button id="downloadBtn" class="export-btn">
+                                    <i class="fas fa-download"></i> Download JSON
+                                </button>
+                            </div>
+
+                            <!-- Raw OCR Toggle -->
+                            <div id="rawOcrSection" class="raw-ocr">
+                                <button id="rawOcrToggle" class="raw-ocr-toggle">
+                                    <i class="fas fa-eye"></i> Show Raw OCR Output
+                                </button>
+                                <pre id="rawOcrContent" class="raw-ocr-content" style="display:none;"></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Footer -->
+        <footer class="app-footer">
+            Registration Card Scanner &mdash; Powered by EasyOCR &amp; Flask
+        </footer>
+
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <!-- Scripts -->
+    <script src="/static/js/script.js"></script>
+
+</body>
+</html>
