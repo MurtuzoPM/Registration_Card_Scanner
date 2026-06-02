@@ -103,8 +103,12 @@ def preprocess_image(file_path, enable_preprocessing=True):
         logger.info('Resized image from %dx%d to %dx%d', w, h,
                      img_np.shape[1], img_np.shape[0])
 
-    # Step 2: Convert to grayscale
+    # Step 2: Convert to grayscale.  Red ink on pink card stock is often too
+    # weak in ordinary luminance, so fold in the green/blue channels where red
+    # writing appears darker.
     gray = cv2.cvtColor(img_np, cv2.COLOR_RGB2GRAY)
+    red_ink_gray = cv2.min(img_np[:, :, 1], img_np[:, :, 2])
+    gray = cv2.min(gray, red_ink_gray)
 
     # Step 3: Deskew
     gray, skew_angle = _deskew_image(gray)
