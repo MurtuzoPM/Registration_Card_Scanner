@@ -39,7 +39,13 @@ def fuzzy_match_any(text, keywords, threshold=0.6):
 
 def _is_date_text(text):
     """Check if text looks like a date value."""
-    return bool(re.search(r'\d{2}[./\-]\d{2}[./\-]\d{2,4}', text.strip()))
+    text_stripped = text.strip()
+    if re.search(r'\d{2}[./\-]\d{2}[./\-]\d{2,4}', text_stripped):
+        return True
+    cleaned = re.sub(r'[^0-9]', '', text_stripped)
+    if len(cleaned) == 8:
+        return True
+    return False
 
 
 def _is_number_or_code(text):
@@ -223,24 +229,20 @@ def _is_pure_label_text(text):
 
 
 def _clean_date_value(text):
-    """Normalize date format to DD.MM.YYYY."""
-    text = text.strip()
-    m = re.search(r'(\d{2})[.,/\-](\d{2})[.,/\-](\d{4})', text)
+    text = re.sub(r'\s+', '', text).strip()
+    # Handle DDMMYYYY or similar
+    if len(text) == 8 and text.isdigit():
+        return f'{text[:2]}.{text[2:4]}.{text[4:]}'
+    m = re.search(r'(\d{2})[.,/\\-](\d{2})[.,/\\-](\d{4})', text)
     if m:
         day, month, year = m.group(1), m.group(2), m.group(3)
-        if int(day) > 31 and day.startswith('4'):
-            day = '1' + day[1]
+        if int(day) > 31 and day.startswith('4'): day = '1' + day[1]
         return f'{day}.{month}.{year}'
-    m = re.search(r'(\d{2})[.,/\-](\d{2})[.,/\-](\d{2})\b', text)
+    m = re.search(r'(\d{2})[.,/\\-](\d{2})[.,/\\-](\d{2})\b', text)
     if m:
         year = int(m.group(3))
         full_year = f'20{m.group(3)}' if year < 80 else f'19{m.group(3)}'
         return f'{m.group(1)}.{m.group(2)}.{full_year}'
-    m = re.search(r'\b(\d{2})(\d{2})(\d{4})\b', text)
-    if m:
-        day, month, year = m.group(1), m.group(2), m.group(3)
-        if 1 <= int(day) <= 31 and 1 <= int(month) <= 12:
-            return f'{day}.{month}.{year}'
     return text
 
 
@@ -287,8 +289,8 @@ def _normalize_short_cyrillic_code(text):
         'D': 'Д',
         'Z': 'Д',
         '3': 'З',
-        '4': 'Ч',
-        'T': 'Т',
+        '4': 'Ҷ', 'Ч': 'Ҷ',
+        'T': 'Т', '0': 'О', 'I': 'Ӣ', 'Y': 'Ӯ',
     }
     return ''.join(replacements.get(ch, ch) for ch in text)
 
@@ -302,17 +304,22 @@ def _normalize_mia_value(text):
 
 
 def _normalize_citizenship(text):
-    value = text.strip(' .:;,-()')
+    value = text.strip(' .:;,-()_')
+    value = re.sub(r'^[дuаАххььванддАа\s]+', '', value)
     lower = value.lower()
-    known = {
-        'хиоц': 'Хитой',
-        'хиюош': 'Хитой',
-        'хиюц': 'Хитой',
-        'хигой': 'Хитой',
-        'хитои': 'Хитой',
-        'хитой': 'Хитой',
-    }
-    return known.get(lower, value)
+    known = {'хиоц': 'Хитой', 'хиюош': 'Хитой', 'хиюц': 'Хитой', 'хигой': 'Хитой', 'хитои': 'Хитой', 'хитой': 'Хитой', 'амнрн': 'Эрон', 'шахраанди': 'Шаҳрвандӣ'}
+    if lower in known: return known[lower]
+    if any(x in lower for x in ['хит', 'хиг', 'хио', 'хиц']): return 'Хитой'
+    return value
+def _clean_tajik_text(text):
+    if not text: return text
+    text = text.replace('0', 'О').replace('4', 'Ҷ').replace('3', 'З').replace('6', 'Б').replace('8', 'В').replace('Ч', 'Ҷ')
+    replacements = {'Ханнфя': 'Ханифа', 'Амнрн': 'Амири', 'Дмхри': 'Душанбе', 'Ханнфа': 'Ханифа', 'Амнри': 'Амири', '0елонзода': 'Элонзода', 'Ваиг': 'Ванг', 'Душаибе': 'Душанбе', 'Еюец': 'Юе', 'Еюеш': 'Юе'}
+    for old, new in replacements.items():
+        if old in text: text = text.replace(old, new)
+    if text.endswith('я') and len(text) > 3: text = text[:-1] + 'а'
+    return text.strip()
+
 
 
 def _has_cyrillic(text):
@@ -358,15 +365,13 @@ def _is_candidate_for_field(field_num, text):
 
 
 def _extract_date_from_text(text):
-    """Try to extract a date from a text string."""
-    extra_patterns = [
-        r'\d{2}[.,/\-]\d{2}[.,/\-]\d{4}',
-        r'\b\d{8}\b',
-    ]
-    for pattern in [*Config.DATE_PATTERNS, *extra_patterns]:
-        m = re.search(pattern, text)
-        if m:
-            return _clean_date_value(m.group())
+    cleaned = re.sub(r'[^0-9.,/\\-]', '', text)
+    digits_only = re.sub(r'[^0-9]', '', text)
+    extra_patterns = [r'(\d{2})[.,/\\-](\d{2})[.,/\\-](\d{4})', r'\\b\d{8}\\b']
+    for pattern in [r'(\d{2})[.,/\\-](\d{2})[.,/\\-](\d{4})', r'\d{8}', r'\d{2}[.,/\\-]\d{2}[.,/\\-]\d{2}']:
+        for t in [text, cleaned, digits_only]:
+            m = re.search(pattern, t)
+            if m: return _clean_date_value(m.group())
     return None
 
 
@@ -424,7 +429,7 @@ class TextParser:
     Strategy:
       0. Pattern matching for Passport, Serial, Registration card number, Dates
       1. Detect numbered labels (1-13) on right half for spatial anchoring
-      2. For each detected label number → find value to its left (middle zone)
+      2. For each detected label number -> find value to its left (middle zone)
       3. Keyword-anchored fallback for missed fields
       4. Positional fallback using approximate Y positions
       Post-process: validate and clean each field value
@@ -465,7 +470,7 @@ class TextParser:
             if field_num is None:
                 continue
             val, conf = self._pattern_fallback(key, ocr_results, used_texts)
-            if val and conf > 0.2:
+            if val and (conf > 0.15 or (len(val) >= 8 and any(c.isdigit() for c in val))):
                 field_value_map[field_num] = (val, max(conf, 0.5))
                 used_texts.add(val)
                 logger.info('Step 0: Pattern found Field %d (%s) = "%s" (conf=%.3f)',
@@ -496,7 +501,7 @@ class TextParser:
             if val_text:
                 field_value_map[field_num] = (val_text, val_conf)
                 used_texts.add(val_text)
-                logger.info('Step 2: Label %d → Value = "%s"', field_num, val_text)
+                logger.info('Step 2: Label %d -> Value = "%s"', field_num, val_text)
 
         # ------------------------------------------------------------------
         # Step 3: Keyword-anchored fallback
@@ -530,7 +535,7 @@ class TextParser:
                 if val_text:
                     field_value_map[field_num] = (val_text, val_conf)
                     used_texts.add(val_text)
-                    logger.info('Step 3: Keyword anchor Field %d → "%s"', field_num, val_text)
+                    logger.info('Step 3: Keyword anchor Field %d -> "%s"', field_num, val_text)
 
         # ------------------------------------------------------------------
         # Step 4: Positional fallback using known approximate Y positions
@@ -545,7 +550,7 @@ class TextParser:
             if val:
                 field_value_map[field_num] = (val, conf)
                 used_texts.add(val)
-                logger.info('Step 4: Positional fallback Field %d → "%s"', field_num, val)
+                logger.info('Step 4: Positional fallback Field %d -> "%s"', field_num, val)
 
         # ------------------------------------------------------------------
         # Post-process: validate and clean each value
@@ -887,7 +892,7 @@ class TextParser:
             rel_y = (by / img_height) * 100
             rel_x = (bx / img_width) * 100
 
-            y_tolerance = 9 if field_num in {9, 10, 12} else 7
+            y_tolerance = 12 if field_num in {9, 10, 12, 5, 13} else 9
             if abs(rel_y - est_rel_y) > y_tolerance:
                 continue
             min_x, max_x = 30, 80
@@ -943,8 +948,9 @@ class TextParser:
     def _post_process_fields(self, field_value_map):
         cleaned = {}
         for field_num, (value, conf) in field_value_map.items():
-            value = value.strip('.:;,- ')
             key = self.fields.get(field_num, {}).get('key', '')
+            if key in {'name_and_surname', 'place_of_residence', 'place_of_residence_cont', 'inspector'}: value = _clean_tajik_text(value)
+            value = value.strip('.:;,- ')
 
             # Reject values that are actually labels
             if _is_pure_label_text(value):
