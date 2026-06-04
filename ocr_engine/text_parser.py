@@ -2,6 +2,7 @@ import re
 import logging
 from difflib import SequenceMatcher
 from config import Config
+from ocr_engine.pattern_extractor import extract_global_patterns
 
 logger = logging.getLogger(__name__)
 
@@ -505,6 +506,29 @@ class TextParser:
                 used_texts.add(val)
                 logger.info('Step 0: Pattern found Field %d (%s) = "%s" (conf=%.3f)',
                             field_num, key, val, conf)
+
+        # ------------------------------------------------------------------
+        # Step 0.5: Global pattern pre-pass (label-anchor + content patterns)
+        # Added to recover fields when numbered labels are not present on
+        # the card (which is the case for real registration cards — the
+        # 1..13 numbers exist only on annotated debug images).
+        # Anything found here seeds field_value_map; existing steps below
+        # still run and can only ADD to (never overwrite) these results.
+        # ------------------------------------------------------------------
+        try:
+            global_hits = extract_global_patterns(ocr_results)
+        except Exception as exc:  # pragma: no cover - defensive
+            logger.exception('Global pattern pre-pass failed: %s', exc)
+            global_hits = {}
+        for field_num, (val, conf) in global_hits.items():
+            if field_num in field_value_map:
+                continue
+            if not val:
+                continue
+            field_value_map[field_num] = (val, max(conf, 0.5))
+            used_texts.add(val)
+            logger.info('Step 0.5: Global pattern Field %d = "%s" (conf=%.3f)',
+                        field_num, val, conf)
 
         # ------------------------------------------------------------------
         # Step 1: Detect numbered labels (1-13)
