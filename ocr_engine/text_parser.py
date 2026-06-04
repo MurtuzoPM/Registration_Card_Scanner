@@ -172,11 +172,9 @@ def _is_pure_label_text(text):
         'идомаи ҷои зист', 'вазорати корхои дохили', 'чумхурии точикистон',
         'барои истифода', 'кабулшуда', 'ташкилот', 'шахси', 'кабулкунанда',
         'ба кайд гирифта', 'ба қайд гирифта',
-        # label-line phrases that appear in raw OCR of this card
-        'ба кайд гирифта шуд', 'тамдид карда шуд',
-        'ба қайд гирифта', 'ба кайд гирифта',
         'шуд / тамдид', 'карда шуд',
-        'насабу ном', 'ласабу ном',
+        'насабу ном', 'ласабу ном', 'пасабу ном', 'насабуном', 'ласабуном',
+        'ласаау пом', 'ласабу пом', 'ласаау',
     ]
     for phrase in strong_label_phrases:
         if phrase in text_lower:
@@ -225,13 +223,25 @@ def _is_pure_label_text(text):
 def _clean_date_value(text):
     """Normalize date format to DD.MM.YYYY."""
     text = text.strip()
-    m = re.search(r'(\d{2})[.,/\-](\d{2})[.,/\-](\d{4})', text)
+    # Normalize common OCR separators (apostrophe, space, comma) to dots
+    text = re.sub(r"[' ,]", '.', text)
+    # Remove leading non-digit noise
+    text = re.sub(r'^[^0-9.]+', '', text)
+    # Try DD.MM.YYYY first (zero-padded)
+    m = re.search(r'(\d{2})\.(\d{2})\.(\d{4})', text)
     if m:
         day, month, year = m.group(1), m.group(2), m.group(3)
         if int(day) > 31 and day.startswith('4'):
             day = '1' + day[1]
         return f'{day}.{month}.{year}'
-    m = re.search(r'(\d{2})[.,/\-](\d{2})[.,/\-](\d{2})\b', text)
+    # Try D.M.YYYY (single digit day/month, zero-pad them)
+    m = re.search(r'(\d{1,2})\.(\d{1,2})\.(\d{4})', text)
+    if m:
+        day = m.group(1).zfill(2)
+        month = m.group(2).zfill(2)
+        year = m.group(3)
+        return f'{day}.{month}.{year}'
+    m = re.search(r'(\d{2})\.(\d{2})\.(\d{2})\b', text)
     if m:
         year = int(m.group(3))
         full_year = f'20{m.group(3)}' if year < 80 else f'19{m.group(3)}'
@@ -266,6 +276,23 @@ def _fix_digit_ocr(text):
     return text.upper().replace('O', '0').replace('Z', '7').replace('S', '5').replace('I', '1').replace('B', '8')
 
 
+def _fix_cyrillic_latin(text):
+    """Convert common Cyrillic→Latin OCR misreads (Е→E, С→C, А→A, etc.)."""
+    replacements = {
+        '\u0415': 'E', '\u0435': 'e',  # Cyrillic Е/е → Latin E/e
+        '\u0421': 'C', '\u0441': 'c',  # Cyrillic С/с → Latin C/c
+        '\u0410': 'A', '\u0430': 'a',  # Cyrillic А/а → Latin A/a
+        '\u041e': 'O', '\u043e': 'o',  # Cyrillic О/о → Latin O/o
+        '\u0420': 'P', '\u0440': 'p',  # Cyrillic Р/р → Latin P/p
+        '\u041c': 'M', '\u043c': 'm',  # Cyrillic М/м → Latin M/m
+        '\u041d': 'H', '\u043d': 'h',  # Cyrillic Н/н → Latin H/h
+        '\u041a': 'K', '\u043a': 'k',  # Cyrillic К/к → Latin K/k
+        '\u0412': 'B', '\u0432': 'b',  # Cyrillic В/в → Latin B/b
+        '\u0422': 'T', '\u0442': 't',  # Cyrillic Т/т → Latin T/t
+    }
+    return ''.join(replacements.get(ch, ch) for ch in text)
+
+
 def _looks_like_passport(text):
     text = _clean_number_value(text)
     text = re.sub(r'[^A-Za-z0-9]+$', '', text)
@@ -289,6 +316,13 @@ def _normalize_short_cyrillic_code(text):
         '3': 'З',
         '4': 'Ч',
         'T': 'Т',
+        'O': 'О',
+        'C': 'С',
+        'A': 'А',
+        'E': 'Е',
+        'M': 'М',
+        'H': 'Н',
+        'P': 'Р',
     }
     return ''.join(replacements.get(ch, ch) for ch in text)
 
@@ -377,8 +411,9 @@ FIELD_LABELS = {
     1: ['рақами бақайдгирӣ', 'рақами қайд', 'корти бақайдгирӣ',
         'карточка регистрации', 'registration card', 'варақаи'],
     2: ['шиноснома', 'шиносномаи', 'паспорт', 'рақами шиноснома',
-        'шиноснома №', 'шиноснома но'],
-    3: ['шаҳрвандӣ', 'шаҳрванди', 'шахрвандӣ', 'шахрванди', 'гражданство'],
+        'шиноснома №', 'шиноснома но', 'шиносномАи'],
+    3: ['шаҳрвандӣ', 'шаҳрванди', 'шахрвандӣ', 'шахрванди', 'гражданство',
+        'шахрвант', 'шахрване'],
     4: ['насаб', 'ному насаб', 'ном ва насаб'],
     5: ['санаи бақайдгирӣ', 'санаи қайд', 'ба қайд гирифта'],
     6: ['хшб', 'паспортӣ', 'бақайдгирии', 'паспорти', 'хшб вкд'],
@@ -454,8 +489,8 @@ class TextParser:
             'passport_number',
             'registration_card_number',
             'serial_control_number',
-            'valid_until',
             'date_of_registration',
+            'valid_until',
             'date_of_registration_extension',
         ]
         for key in priority_order:
@@ -612,16 +647,20 @@ class TextParser:
                 cy = (bbox[0][1] + bbox[2][1]) / 2
                 rel_x = (cx / img_width) * 100
                 rel_y = (cy / img_height) * 100
-                if rel_x > 60:
-                    if num not in positions or rel_x > positions[num][0]:
+                # Accept labels on left side (rel_x < 25) or right side (rel_x > 55)
+                if rel_x < 25 or rel_x > 55:
+                    if num not in positions:
                         positions[num] = (rel_x, rel_y, bbox)
         return positions
 
     # ------------------------------------------------------------------
-    # Step 2: find value to the LEFT of a detected label number
+    # Step 2: find value near a detected label number
     # ------------------------------------------------------------------
     def _find_value_for_label(self, text_blocks, label_rel_x, label_rel_y,
                                used_texts, field_num, img_width, img_height):
+        # Detect layout: label on LEFT → value is to the RIGHT;
+        # label on RIGHT → value is to the LEFT (original behavior).
+        label_on_left = label_rel_x < 25
         candidates = []
         for block in text_blocks:
             text = block['text'].strip()
@@ -642,20 +681,31 @@ class TextParser:
             dx = rel_x - label_rel_x
             dy = rel_y - label_rel_y
 
-            # Must be to the left of the label number
-            if dx > -3:
+            if label_on_left:
+                # Value must be to the RIGHT of the label number
+                if dx < 3:
+                    continue
+                # Value should be in the middle zone (not at far edge)
+                if rel_x < 25 or rel_x > 75:
+                    continue
+            else:
+                # Original: value must be to the LEFT of the label number
+                if dx > -3:
+                    continue
+                if rel_x < 25:
+                    continue
+
+            if field_num == 8:
+                if rel_x < 70:
+                    continue
+            elif field_num == 11 and rel_x > 65:
                 continue
-            # Must not be in the far-left label/annotation zone
-            if rel_x < 25:
+            elif field_num == 12 and rel_x < 55:
                 continue
-            if field_num == 8 and rel_x < 70:
-                continue
-            if field_num == 11 and rel_x > 65:
-                continue
-            if field_num == 12 and rel_x < 55:
-                continue
+
             # Must be on roughly the same row
-            if abs(dy) > 5:
+            dy_tol = 7 if label_on_left else 5
+            if abs(dy) > dy_tol:
                 continue
 
             if rel_x < 35:
@@ -750,37 +800,54 @@ class TextParser:
                 date = _extract_date_from_text(text)
                 if date:
                     candidates.append((block['confidence'], date, block))
-            if candidates:
-                expected_by_key = {
-                    'date_of_registration': FIELD_REL_Y_APPROX[5],
-                    'valid_until': FIELD_REL_Y_APPROX[7],
-                    'date_of_registration_extension': FIELD_REL_Y_APPROX[13],
-                }
-                expected_y = expected_by_key.get(key)
-                if expected_y is not None and img_height:
-                    positional = []
-                    for conf, date, block in candidates:
-                        bbox = block['bbox']
-                        by = (bbox[0][1] + bbox[2][1]) / 2
-                        rel_y = (by / img_height) * 100
-                        distance = abs(rel_y - expected_y)
-                        if distance <= 8:
-                            positional.append((distance, conf, date, block))
-                    if positional:
-                        positional.sort(key=lambda x: (x[0], -x[1]))
-                        return positional[0][2], positional[0][1]
-                    return None, 0.0
+            if not candidates:
+                return None, 0.0
 
-                candidates.sort(key=lambda x: x[2]['bbox'][0][1])
-                if key == 'date_of_registration':
-                    pick = candidates[0]
-                elif key == 'valid_until':
-                    pick = candidates[1] if len(candidates) > 1 else candidates[0]
-                elif key == 'date_of_registration_extension':
-                    pick = candidates[-1]
-                else:
-                    pick = max(candidates, key=lambda x: x[0])
+            # Try positional matching against expected Y for each date field
+            expected_by_key = {
+                'date_of_registration': FIELD_REL_Y_APPROX[5],
+                'valid_until': FIELD_REL_Y_APPROX[7],
+                'date_of_registration_extension': FIELD_REL_Y_APPROX[13],
+            }
+            expected_y = expected_by_key.get(key)
+            if expected_y is not None and img_height:
+                best = None
+                for conf, date, block in candidates:
+                    bbox = block['bbox']
+                    by = (bbox[0][1] + bbox[2][1]) / 2
+                    rel_y = (by / img_height) * 100
+                    distance = abs(rel_y - expected_y)
+                    if distance <= 8:
+                        # Score: lower distance = better, tiebreak by confidence
+                        score = (distance, -conf)
+                        if best is None or score < best[0]:
+                            best = (score, conf, date, block)
+                if best:
+                    used_texts.add(best[3]['text'].strip())
+                    return best[2], best[1]
+                # Positional match failed; fall through to sort-based assignment
+
+            # Fallback: sort by Y and assign by field index
+            candidates.sort(key=lambda x: x[2]['bbox'][0][1])
+            index_map = {
+                'date_of_registration': 0,
+                'valid_until': 1,
+                'date_of_registration_extension': -1,
+            }
+            idx = index_map.get(key, 0)
+            if isinstance(idx, int) and idx < 0:
+                idx = len(candidates) - 1
+            # Only assign if the index exists (prevent valid_until stealing date_of_reg)
+            if idx < len(candidates) and len(candidates) > 0:
+                # For valid_until and extension, require enough candidates to exist
+                if key == 'valid_until' and len(candidates) < 2:
+                    return None, 0.0
+                if key == 'date_of_registration_extension' and len(candidates) < 3:
+                    return None, 0.0
+                pick = candidates[idx]
+                used_texts.add(pick[2]['text'].strip())
                 return pick[1], pick[0]
+            return None, 0.0
 
         if 'registration_card' in key.lower():
             candidates = []
@@ -818,13 +885,15 @@ class TextParser:
                     continue
                 if _is_pure_label_text(text):
                     continue
-                # Clean prefix characters only (no character substitutions yet)
+                # Convert Cyrillic→Latin (OCR often misreads Cyrillic letters as Latin)
+                latin_text = _fix_cyrillic_latin(text)
+                # Clean prefix characters
                 stripped = _clean_number_value(text)
+                latin_stripped = _fix_cyrillic_latin(stripped)
                 # Remove trailing non-alphanumeric chars
                 stripped = re.sub(r'[^A-Za-z0-9]+$', '', stripped)
-                for t in [text, stripped]:
-                    # More permissive passport pattern: 1-3 letters + 6-8
-                    # digit-like chars, then correct only the numeric part.
+                latin_stripped = re.sub(r'[^A-Za-z0-9]+$', '', latin_stripped)
+                for t in [text, stripped, latin_text, latin_stripped]:
                     m = _looks_like_passport(t)
                     if m:
                         val = _normalize_passport(t)
@@ -842,6 +911,9 @@ class TextParser:
                 if text in used_texts:
                     continue
                 if _is_pure_label_text(text):
+                    continue
+                # Skip blocks that contain date-like patterns (dots, commas, slashes between digits)
+                if re.search(r'\d+[.,/\' ]\d+', text):
                     continue
                 m = re.search(Config.SERIAL_NUMBER_NUMERIC_PATTERN, text)
                 if m:
@@ -943,8 +1015,14 @@ class TextParser:
     def _post_process_fields(self, field_value_map):
         cleaned = {}
         for field_num, (value, conf) in field_value_map.items():
-            value = value.strip('.:;,- ')
+            value = value.strip('.:;,- _')
             key = self.fields.get(field_num, {}).get('key', '')
+
+            # Reject very low confidence values (likely OCR noise)
+            if conf < 0.25:
+                logger.info('Post-process: rejecting low-confidence Field %d (conf=%.3f): "%s"',
+                            field_num, conf, value)
+                continue
 
             # Reject values that are actually labels
             if _is_pure_label_text(value):

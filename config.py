@@ -142,12 +142,19 @@ class Config:
     }
 
     # Regex patterns for various field types
+    # Try strict patterns first, then fall back to flexible ones for OCR noise
     DATE_PATTERNS = [
         r'\d{2}\.\d{2}\.\d{4}',    # DD.MM.YYYY
         r'\d{2}/\d{2}/\d{4}',      # DD/MM/YYYY
         r'\d{2}\.\d{2}\.\d{2}\b',  # DD.MM.YY
         r'\d{4}\.\d{2}\.\d{2}',    # YYYY.MM.DD
         r'\d{4}-\d{2}-\d{2}',      # YYYY-MM-DD
+        # Flexible patterns for OCR noise (spaces, apostrophes instead of dots)
+        r"\d{2}[' ]\d{2}[' ]\d{4}",     # DD'MM'YYYY or DD MM YYYY
+        r"\d{2}[' ]\d{2}[' ]\d{2}\b",   # DD'MM'YY or DD MM YY
+        r',?\d{2}\.\d{2}\.\d{4}',       # optional leading comma + DD.MM.YYYY
+        # Very flexible: handle single-digit day/month, comma/space separators
+        r'[^0-9]*\d{1,2}[.,/\'\s]+\d{1,2}[.,/\'\s]+\d{4}',
     ]
 
     # More permissive: allow trailing dash, handle OCR noise

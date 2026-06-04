@@ -83,20 +83,48 @@ def extract():
         if not is_valid:
             return jsonify({'error': validation_msg}), 400
 
-        # Preprocess image
+        # Preprocess image (returns list of images for multi-pass OCR)
         logger.info(f'Processing image: {file_path}')
-        processed_img = preprocess_image(
+        processed_images = preprocess_image(
             file_path,
             enable_preprocessing=Config.ENABLE_IMAGE_PREPROCESSING
         )
 
-        # Run OCR
-        ocr_results = ocr_handler.extract_text_with_positions(processed_img)
+        # Run OCR + parse on each variant independently, then merge field results
+        best_fields = {}
+        all_raw_ocr = []
+        for img in processed_images:
+            ocr_results = ocr_handler.extract_text_with_positions(img)
+            all_raw_ocr.extend(ocr_results)
+            parsed = text_parser.parse(ocr_results)
+            for key, data in parsed.items():
+                if data['value'] and (
+                    key not in best_fields or
+                    data['confidence'] > best_fields[key]['confidence']
+                ):
+                    best_fields[key] = data
 
-        logger.info(f'OCR extracted {len(ocr_results)} text blocks')
+        # Deduplicate raw OCR for response
+        seen = {}
+        for r in all_raw_ocr:
+            k = r['text'].lower().strip()
+            if k not in seen or r['confidence'] > seen[k]['confidence']:
+                seen[k] = r
+        ocr_results = sorted(seen.values(), key=lambda x: (x['bbox'][0][1], x['bbox'][0][0]))
 
-        # Parse fields
-        parsed_data = text_parser.parse(ocr_results)
+        # Build merged parsed data with empty fields for missing keys
+        parsed_data = {}
+        for field_num, field_info in Config.FIELDS.items():
+            key = field_info['key']
+            if key in best_fields:
+                parsed_data[key] = best_fields[key]
+            else:
+                parsed_data[key] = {
+                    'value': '', 'confidence': 0.0,
+                    'label': field_info['label'],
+                    'field_number': field_num,
+                }
+
         confidence = text_parser.get_confidence_score(parsed_data)
 
         # Build response

@@ -103,7 +103,7 @@ class OCRHandler:
             text = self._clean_text(text)
             if not text or len(text) < 1:
                 continue
-            if confidence < 0.1:
+            if confidence < 0.05:
                 continue
 
             # Deduplicate near-identical texts

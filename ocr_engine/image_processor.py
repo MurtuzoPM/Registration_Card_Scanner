@@ -62,21 +62,58 @@ def _deskew_image(gray):
     return rotated, median_angle
 
 
+def _remove_colored_background(img_rgb, dark_v_threshold=80):
+    """
+    Remove red background and blue seal/stamp from Tajikistan registration cards.
+
+    Args:
+        dark_v_threshold: V (brightness) threshold for preserving text pixels.
+            Higher values preserve more faint handwriting but also more noise.
+            Use 80 for clean images, 140 for noisy/faint images.
+    """
+    hsv = cv2.cvtColor(img_rgb, cv2.COLOR_RGB2HSV)
+
+    mask_red = (
+        cv2.inRange(hsv, np.array([0, 15, 15]), np.array([20, 255, 255])) |
+        cv2.inRange(hsv, np.array([160, 15, 15]), np.array([180, 255, 255]))
+    )
+
+    mask_blue = cv2.inRange(hsv, np.array([85, 15, 15]), np.array([145, 255, 255]))
+
+    mask_dark = cv2.inRange(hsv, np.array([0, 0, 0]),
+                            np.array([180, 255, dark_v_threshold]))
+
+    result = img_rgb.copy()
+    mask_colored_nontext = (mask_red | mask_blue) & ~mask_dark
+    result[mask_colored_nontext > 0] = [255, 255, 255]
+
+    return result
+
+
+def _detect_noise_level(img_rgb):
+    """Estimate noise level based on colored pixel ratio."""
+    hsv = cv2.cvtColor(img_rgb, cv2.COLOR_RGB2HSV)
+    mask_red = (
+        cv2.inRange(hsv, np.array([0, 30, 30]), np.array([15, 255, 255])) |
+        cv2.inRange(hsv, np.array([165, 30, 30]), np.array([180, 255, 255]))
+    )
+    mask_blue = cv2.inRange(hsv, np.array([90, 30, 30]), np.array([140, 255, 255]))
+    colored_ratio = np.sum((mask_red | mask_blue) > 0) / (img_rgb.shape[0] * img_rgb.shape[1])
+    return 'noisy' if colored_ratio > 0.15 else 'clean'
+
+
 def preprocess_image(file_path, enable_preprocessing=True):
     """
-    Preprocess image for optimal OCR with MINIMAL processing.
+    Preprocess image for optimal OCR with dual-pipeline approach.
 
-    For registration cards, heavy processing (shadow removal, binary thresholding,
-    heavy sharpening) tends to destroy handwritten and faint text. Instead, we:
-      1. Load and auto-orient via EXIF
-      2. Scale to consistent 2560px width
-      3. Convert to grayscale
-      4. Deskew if rotated
-      5. Light CLAHE contrast enhancement
-      6. Very gentle denoise
-      7. Convert back to RGB for EasyOCR
+    Returns TWO preprocessed variants:
+      1. Aggressive: color removal (V=140) + red-ink grayscale + CLAHE 3.0
+         — best for noisy images with red/blue backgrounds and faint handwriting
+      2. Conservative: no color removal, standard grayscale + CLAHE 2.0
+         — best for clean images where color removal destroys text
 
-    Returns the image as a NumPy array (RGB).
+    OCR runs on both and results are merged, keeping the best text per region.
+    Returns a list of NumPy arrays in RGB.
     """
     try:
         pil_image = Image.open(file_path)
@@ -90,40 +127,43 @@ def preprocess_image(file_path, enable_preprocessing=True):
         img_np = cv2.cvtColor(img_np, cv2.COLOR_BGR2RGB)
 
     if not enable_preprocessing:
-        return img_np
+        return [img_np]
 
-    # Step 1: Scale to consistent 2560px width
     h, w = img_np.shape[:2]
     TARGET_WIDTH = 2560
     if w != TARGET_WIDTH:
         scale = TARGET_WIDTH / w
         interp = cv2.INTER_CUBIC if scale > 1 else cv2.INTER_AREA
-        img_np = cv2.resize(img_np, None, fx=scale, fy=scale,
-                            interpolation=interp)
+        img_np = cv2.resize(img_np, None, fx=scale, fy=scale, interpolation=interp)
         logger.info('Resized image from %dx%d to %dx%d', w, h,
                      img_np.shape[1], img_np.shape[0])
 
-    # Step 2: Convert to grayscale.  Red ink on pink card stock is often too
-    # weak in ordinary luminance, so fold in the green/blue channels where red
-    # writing appears darker.
-    gray = cv2.cvtColor(img_np, cv2.COLOR_RGB2GRAY)
-    red_ink_gray = cv2.min(img_np[:, :, 1], img_np[:, :, 2])
-    gray = cv2.min(gray, red_ink_gray)
+    results = []
 
-    # Step 3: Deskew
-    gray, skew_angle = _deskew_image(gray)
-    if abs(skew_angle) > 0.5:
-        logger.info('Deskewed image by %.2f degrees', skew_angle)
+    # Variant 1: Aggressive — color removal + red-ink-aware grayscale
+    img_v1 = _remove_colored_background(img_np, dark_v_threshold=140)
+    gray_v1 = cv2.cvtColor(img_v1, cv2.COLOR_RGB2GRAY)
+    red_ink = cv2.min(img_v1[:, :, 1], img_v1[:, :, 2])
+    gray_v1 = cv2.min(gray_v1, red_ink)
+    gray_v1, angle1 = _deskew_image(gray_v1)
+    if abs(angle1) > 0.5:
+        logger.info('Variant 1 deskewed by %.2f degrees', angle1)
+    clahe1 = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8, 8))
+    gray_v1 = clahe1.apply(gray_v1)
+    gray_v1 = cv2.fastNlMeansDenoising(gray_v1, h=5, templateWindowSize=7,
+                                        searchWindowSize=21)
+    results.append(cv2.cvtColor(gray_v1, cv2.COLOR_GRAY2RGB))
 
-    # Step 4: CLAHE contrast enhancement (gentle)
-    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
-    gray = clahe.apply(gray)
+    # Variant 2: Conservative — no color removal, standard pipeline
+    gray_v2 = cv2.cvtColor(img_np, cv2.COLOR_RGB2GRAY)
+    gray_v2, angle2 = _deskew_image(gray_v2)
+    if abs(angle2) > 0.5:
+        logger.info('Variant 2 deskewed by %.2f degrees', angle2)
+    clahe2 = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+    gray_v2 = clahe2.apply(gray_v2)
+    gray_v2 = cv2.fastNlMeansDenoising(gray_v2, h=5, templateWindowSize=7,
+                                        searchWindowSize=21)
+    results.append(cv2.cvtColor(gray_v2, cv2.COLOR_GRAY2RGB))
 
-    # Step 5: Very gentle denoise (preserves text detail)
-    gray = cv2.fastNlMeansDenoising(gray, h=5, templateWindowSize=7,
-                                    searchWindowSize=21)
-
-    # Convert to 3-channel RGB for EasyOCR
-    result = cv2.cvtColor(gray, cv2.COLOR_GRAY2RGB)
-
-    return result
+    logger.info('Dual-pipeline: returning %d variants', len(results))
+    return results
