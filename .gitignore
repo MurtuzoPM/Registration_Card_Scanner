@@ -12,6 +12,13 @@ venv/
 uploads/*
 !uploads/.gitkeep
 
+# Local OCR training/evaluation data
+training/images/*
+training/labels.local.json
+training/reports/*
+!training/images/.gitkeep
+!training/reports/.gitkeep
+
 # Debug and test output
 debug_*.json
 ocr_result*.json
