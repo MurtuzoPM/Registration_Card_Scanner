@@ -35,11 +35,16 @@ def allowed_file(filename):
         filename.rsplit('.', 1)[1].lower() in Config.ALLOWED_EXTENSIONS
 
 
+def _is_valid_field(data):
+    """Return True only for normal parsed field dictionaries with a value key."""
+    return isinstance(data, dict) and 'value' in data
+
+
 def _prefer_field(existing, candidate):
     """Decide whether a candidate should replace an existing parsed field."""
-    if not candidate or not candidate.get('value'):
-        return existing
-    if not existing or not existing.get('value'):
+    if not _is_valid_field(candidate) or not candidate.get('value'):
+        return existing if _is_valid_field(existing) else None
+    if not _is_valid_field(existing) or not existing.get('value'):
         return candidate
 
     existing_conf = float(existing.get('confidence', 0.0))
@@ -59,6 +64,15 @@ def _prefer_field(existing, candidate):
     if candidate_conf > existing_conf:
         return candidate
     return existing
+
+
+def _put_best_field(best_fields, key, candidate):
+    """Safely update best_fields without ever storing None values."""
+    selected = _prefer_field(best_fields.get(key), candidate)
+    if _is_valid_field(selected):
+        best_fields[key] = selected
+    elif key in best_fields and not _is_valid_field(best_fields.get(key)):
+        best_fields.pop(key, None)
 
 
 @app.route('/')
@@ -130,21 +144,25 @@ def extract():
         for img in processed_images:
             ocr_results = ocr_handler.extract_text_with_positions(img)
             per_pass_ocr.append(ocr_results)
-            per_pass_parsed.append(text_parser.parse(ocr_results))
+            parsed = text_parser.parse(ocr_results) or {}
+            per_pass_parsed.append({k: v for k, v in parsed.items() if _is_valid_field(v)})
 
-        best_fields = merge_parsed_fields(per_pass_parsed)
+        best_fields = {
+            k: v for k, v in (merge_parsed_fields(per_pass_parsed) or {}).items()
+            if _is_valid_field(v)
+        }
 
         # Fill gaps using OCR merged across all variants (higher recall)
         merged_ocr = merge_ocr_blocks(per_pass_ocr)
-        parsed_merged = text_parser.parse(merged_ocr)
+        parsed_merged = text_parser.parse(merged_ocr) or {}
         for key, data in parsed_merged.items():
-            best_fields[key] = _prefer_field(best_fields.get(key), data)
+            _put_best_field(best_fields, key, data)
 
         # ROI parser: fixed-layout field crops + regex validation for IDs/dates.
         # This is especially important for phone photos and low-quality screenshots.
         roi_fields, roi_ocr, roi_debug = extract_roi_fields(processed_images, ocr_handler, merged_ocr)
-        for key, data in roi_fields.items():
-            best_fields[key] = _prefer_field(best_fields.get(key), data)
+        for key, data in (roi_fields or {}).items():
+            _put_best_field(best_fields, key, data)
 
         ocr_results = merge_ocr_blocks([merged_ocr, roi_ocr])
 
@@ -152,7 +170,7 @@ def extract():
         parsed_data = {}
         for field_num, field_info in Config.FIELDS.items():
             key = field_info['key']
-            if key in best_fields:
+            if _is_valid_field(best_fields.get(key)):
                 parsed_data[key] = best_fields[key]
             else:
                 parsed_data[key] = {
@@ -162,7 +180,7 @@ def extract():
                 }
 
         confidence = text_parser.get_confidence_score(parsed_data)
-        fields_extracted = sum(1 for d in parsed_data.values() if d['value'])
+        fields_extracted = sum(1 for d in parsed_data.values() if _is_valid_field(d) and d.get('value'))
         fields_total = len(Config.FIELDS)
         completeness = round(fields_extracted / fields_total, 3) if fields_total else 0.0
 
