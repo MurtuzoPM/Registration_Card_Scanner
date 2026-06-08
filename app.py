@@ -5,7 +5,7 @@ from flask import Flask, request, jsonify, render_template
 from config import Config
 from ocr_engine import (
     validate_image, preprocess_image, OCRHandler, TextParser,
-    merge_ocr_blocks, merge_parsed_fields,
+    merge_ocr_blocks, merge_parsed_fields, extract_roi_fields,
 )
 
 # Configure logging
@@ -33,6 +33,32 @@ text_parser = TextParser()
 def allowed_file(filename):
     return '.' in filename and \
         filename.rsplit('.', 1)[1].lower() in Config.ALLOWED_EXTENSIONS
+
+
+def _prefer_field(existing, candidate):
+    """Decide whether a candidate should replace an existing parsed field."""
+    if not candidate or not candidate.get('value'):
+        return existing
+    if not existing or not existing.get('value'):
+        return candidate
+
+    existing_conf = float(existing.get('confidence', 0.0))
+    candidate_conf = float(candidate.get('confidence', 0.0))
+    existing_value = str(existing.get('value', ''))
+    candidate_value = str(candidate.get('value', ''))
+
+    # Structured ROI/regex values are usually better for IDs and dates even if
+    # OCR confidence is similar.
+    structured_sources = {'roi', 'position_date', 'global_regex'}
+    if candidate.get('source') in structured_sources:
+        if candidate_conf >= existing_conf - 0.08:
+            return candidate
+        if len(candidate_value) > len(existing_value) and candidate_conf >= existing_conf - 0.18:
+            return candidate
+
+    if candidate_conf > existing_conf:
+        return candidate
+    return existing
 
 
 @app.route('/')
@@ -112,13 +138,15 @@ def extract():
         merged_ocr = merge_ocr_blocks(per_pass_ocr)
         parsed_merged = text_parser.parse(merged_ocr)
         for key, data in parsed_merged.items():
-            if data['value'] and (
-                key not in best_fields
-                or data['confidence'] > best_fields[key]['confidence']
-            ):
-                best_fields[key] = data
+            best_fields[key] = _prefer_field(best_fields.get(key), data)
 
-        ocr_results = merged_ocr
+        # ROI parser: fixed-layout field crops + regex validation for IDs/dates.
+        # This is especially important for phone photos and low-quality screenshots.
+        roi_fields, roi_ocr, roi_debug = extract_roi_fields(processed_images, ocr_handler, merged_ocr)
+        for key, data in roi_fields.items():
+            best_fields[key] = _prefer_field(best_fields.get(key), data)
+
+        ocr_results = merge_ocr_blocks([merged_ocr, roi_ocr])
 
         # Build merged parsed data with empty fields for missing keys
         parsed_data = {}
@@ -147,6 +175,8 @@ def extract():
                 'label': data['label'],
                 'field_number': data['field_number'],
             }
+            if data.get('source'):
+                fields[key]['source'] = data['source']
 
         response = {
             'success': True,
@@ -155,6 +185,7 @@ def extract():
             'fields_extracted': fields_extracted,
             'fields_total': fields_total,
             'completeness': completeness,
+            'debug': roi_debug,
             'raw_ocr': [
                 {'text': r['text'], 'confidence': r['confidence'], 'bbox': r['bbox']}
                 for r in ocr_results
