@@ -23,7 +23,7 @@ def validate_image(file_path):
 def _auto_orient_image(pil_img):
     """Auto-orient image based on EXIF data."""
     try:
-        from PIL import ExifTags, ImageOps
+        from PIL import ImageOps
         pil_img = ImageOps.exif_transpose(pil_img)
     except Exception:
         pass
@@ -60,6 +60,96 @@ def _deskew_image(gray):
                              flags=cv2.INTER_CUBIC,
                              borderMode=cv2.BORDER_REPLICATE)
     return rotated, median_angle
+
+
+def _order_points(pts):
+    """Return points in top-left, top-right, bottom-right, bottom-left order."""
+    rect = np.zeros((4, 2), dtype='float32')
+    s = pts.sum(axis=1)
+    rect[0] = pts[np.argmin(s)]
+    rect[2] = pts[np.argmax(s)]
+    diff = np.diff(pts, axis=1)
+    rect[1] = pts[np.argmin(diff)]
+    rect[3] = pts[np.argmax(diff)]
+    return rect
+
+
+def _four_point_transform(img_rgb, pts):
+    """Perspective-correct the detected registration card."""
+    rect = _order_points(pts.astype('float32'))
+    tl, tr, br, bl = rect
+    width_a = np.linalg.norm(br - bl)
+    width_b = np.linalg.norm(tr - tl)
+    height_a = np.linalg.norm(tr - br)
+    height_b = np.linalg.norm(tl - bl)
+    max_width = int(max(width_a, width_b))
+    max_height = int(max(height_a, height_b))
+
+    if max_width < 300 or max_height < 300:
+        return img_rgb
+
+    dst = np.array([
+        [0, 0],
+        [max_width - 1, 0],
+        [max_width - 1, max_height - 1],
+        [0, max_height - 1],
+    ], dtype='float32')
+    matrix = cv2.getPerspectiveTransform(rect, dst)
+    return cv2.warpPerspective(img_rgb, matrix, (max_width, max_height))
+
+
+def _find_card_quad(img_rgb):
+    """
+    Locate the document/card contour if the photo contains margins or skew.
+    The function is intentionally conservative: if it is not confident, it
+    returns None so the old full-image pipeline is preserved.
+    """
+    h, w = img_rgb.shape[:2]
+    gray = cv2.cvtColor(img_rgb, cv2.COLOR_RGB2GRAY)
+    gray = cv2.GaussianBlur(gray, (5, 5), 0)
+    edges = cv2.Canny(gray, 40, 140)
+    kernel = np.ones((5, 5), np.uint8)
+    edges = cv2.dilate(edges, kernel, iterations=1)
+    contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    if not contours:
+        return None
+
+    image_area = float(h * w)
+    candidates = []
+    for contour in contours:
+        area = cv2.contourArea(contour)
+        if area < image_area * 0.20:
+            continue
+        peri = cv2.arcLength(contour, True)
+        approx = cv2.approxPolyDP(contour, 0.02 * peri, True)
+        if len(approx) == 4:
+            candidates.append((area, approx.reshape(4, 2)))
+
+    if not candidates:
+        return None
+
+    candidates.sort(key=lambda x: x[0], reverse=True)
+    return candidates[0][1]
+
+
+def _normalize_card_image(img_rgb):
+    """Deskew/perspective-correct the card when a reliable contour is found."""
+    try:
+        quad = _find_card_quad(img_rgb)
+        if quad is None:
+            return img_rgb
+        warped = _four_point_transform(img_rgb, quad)
+        if warped is None or warped.size == 0:
+            return img_rgb
+        # Registration card is portrait. Rotate if a landscape contour was found.
+        if warped.shape[1] > warped.shape[0] * 1.15:
+            warped = cv2.rotate(warped, cv2.ROTATE_90_CLOCKWISE)
+        logger.info('Detected and perspective-normalized card: %dx%d -> %dx%d',
+                    img_rgb.shape[1], img_rgb.shape[0], warped.shape[1], warped.shape[0])
+        return warped
+    except Exception as exc:
+        logger.warning('Card normalization skipped: %s', exc)
+        return img_rgb
 
 
 def _remove_colored_background(img_rgb, dark_v_threshold=80):
@@ -104,12 +194,13 @@ def _detect_noise_level(img_rgb):
 
 def preprocess_image(file_path, enable_preprocessing=True, fast_mode=False):
     """
-    Preprocess image for optimal OCR with dual-pipeline approach.
+    Preprocess image for optimal OCR with multi-pipeline approach.
 
-    Returns THREE preprocessed variants:
+    Returns preprocessed variants:
       1. Aggressive: color removal (V=140) + red-ink grayscale + CLAHE 3.0
       2. Conservative: standard grayscale + CLAHE 2.0
-      3. Adaptive binary: deskewed threshold image (best for digits/dates)
+      3. Adaptive binary: threshold image (best for digits/dates, skipped in fast mode)
+      4. Red channel enhanced: helps the red registration-card number (skipped in fast mode)
 
     OCR runs on all variants and results are merged.
     Returns a list of NumPy arrays in RGB.
@@ -127,6 +218,8 @@ def preprocess_image(file_path, enable_preprocessing=True, fast_mode=False):
 
     if not enable_preprocessing:
         return [img_np]
+
+    img_np = _normalize_card_image(img_np)
 
     h, w = img_np.shape[:2]
     TARGET_WIDTH = 2560
@@ -179,6 +272,14 @@ def preprocess_image(file_path, enable_preprocessing=True, fast_mode=False):
         kernel = np.ones((2, 2), np.uint8)
         binary = cv2.morphologyEx(binary, cv2.MORPH_CLOSE, kernel)
         results.append(cv2.cvtColor(binary, cv2.COLOR_GRAY2RGB))
+
+        # Variant 4: Red/pink-number emphasis for registration-card number at the top.
+        rgb = img_np.astype(np.int16)
+        r, g, b = rgb[:, :, 0], rgb[:, :, 1], rgb[:, :, 2]
+        red_score = np.clip(r - ((g + b) // 2) + 80, 0, 255).astype(np.uint8)
+        red_score = cv2.GaussianBlur(red_score, (3, 3), 0)
+        red_score = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8, 8)).apply(red_score)
+        results.append(cv2.cvtColor(red_score, cv2.COLOR_GRAY2RGB))
 
     logger.info('Multi-pipeline: returning %d variants (fast_mode=%s)',
                 len(results), fast_mode)
