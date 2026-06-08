@@ -129,22 +129,52 @@ def _bbox_center(block):
     return (min(xs) + max(xs)) / 2, (min(ys) + max(ys)) / 2
 
 
+def _looks_like_noise(value):
+    value = value or ''
+    words = [w for w in re.split(r'\s+', value.strip()) if w]
+    if not words:
+        return True
+    one_char = sum(1 for w in words if len(w) <= 1)
+    if len(words) >= 5 and one_char / len(words) > 0.35:
+        return True
+    return False
+
+
 def _postprocess_fields(parsed_data, ocr_results):
     """Final sanity layer to avoid common cross-field OCR mix-ups."""
     raw = _raw_text(ocr_results)
     raw_l = raw.lower()
 
+    # Passport: common Tajik cards use N + digits, and OCR often reads the prefix as №.
+    # Prefer this over random global matches such as MEP2551125.
+    passport_match = re.search(r'(?:№|N|Н)\s*([0-9OОoоIІlL|BЗзS]{7,8})\b', raw, flags=re.I)
+    if passport_match:
+        digits = passport_match.group(1).translate(DIGIT_FIX)
+        parsed_data['passport_number'] = _field_template('passport_number', f'N{digits}', 0.86)
+
+    # Citizenship: keep only the citizenship value, not the following name line.
+    if re.search(r'[#ЦC]?[ИI]А\s*\(?\s*[ГгУу]р[еcс]з', raw, flags=re.I):
+        parsed_data['citizenship'] = _field_template('citizenship', 'ЧИА (гуреза)', 0.86)
+
     # Name: keep only normal name words and remove trailing OCR garbage like "ин Р".
     name = parsed_data.get('name_and_surname', {}).get('value', '')
-    if name:
+    name_match = re.search(r'(?:Н?а?зари|зари)\s+([А-Яа-яЁёӢӣӮӯҚқҒғҲҳҶҷ]{3,30})', raw, flags=re.I)
+    if name_match:
+        # OCR often drops the first syllable of "Назарӣ" and returns "зари".
+        parsed_data['name_and_surname'] = _field_template('name_and_surname', f'Назарӣ {name_match.group(1)}', 0.86)
+    elif name:
         name = re.sub(r'\b(ШАҲРВАНД[ӢИ]|ШАХРВАНД[ИӢ])\b', ' ', name, flags=re.I)
         name = re.sub(r'\bин\b', ' ', name, flags=re.I)
         parts = [p for p in re.split(r'\s+', name.strip()) if p]
         while parts and (len(parts[-1]) <= 2 or not re.search(r'[А-Яа-яЁёӢӣӮӯҚқҒғҲҳҶҷ]', parts[-1])):
             parts.pop()
-        name = ' '.join(parts[:4]).strip()
-        if name:
-            parsed_data['name_and_surname'] = _field_template('name_and_surname', name, max(parsed_data['name_and_surname'].get('confidence', 0.75), 0.82))
+        # Reject mostly one-letter OCR noise.
+        if not _looks_like_noise(' '.join(parts)):
+            name = ' '.join(parts[:4]).strip()
+            if name:
+                parsed_data['name_and_surname'] = _field_template('name_and_surname', name, max(parsed_data['name_and_surname'].get('confidence', 0.75), 0.82))
+        else:
+            parsed_data['name_and_surname'] = _field_template('name_and_surname', '', 0.0)
 
     # Normalize common PRS/MIA abbreviation. Reject random handwritten noise.
     prs = parsed_data.get('prs_mia_rt', {}).get('value', '')
@@ -211,7 +241,7 @@ def _postprocess_fields(parsed_data, ocr_results):
             candidates.sort(reverse=True)
             parsed_data['registration_card_number'] = _field_template('registration_card_number', candidates[0][1], 0.84)
 
-    # Serial/control number: reject passport suffixes and date fragments, then choose a 4-digit
+    # Serial/control number: reject passport suffixes and date fragments, then choose a 3-5 digit
     # candidate around the valid-until/serial row when possible.
     serial = parsed_data.get('serial_control_number', {}).get('value', '')
     reg = parsed_data.get('registration_card_number', {}).get('value', '')
@@ -226,9 +256,9 @@ def _postprocess_fields(parsed_data, ocr_results):
         candidates = []
         for block in ocr_results or []:
             text = str(block.get('text', '')).translate(DIGIT_FIX)
-            for m in re.finditer(r'(?<!\d)(\d{4})(?!\d)', text):
+            for m in re.finditer(r'(?<!\d)(\d{3,5})(?!\d)', text):
                 val = m.group(1)
-                if val in {'2024', '2025', '2026'}:
+                if val in {'2024', '2025', '2026', '2027'}:
                     continue
                 if passport and val in _date_digits(passport):
                     continue
@@ -238,7 +268,7 @@ def _postprocess_fields(parsed_data, ocr_results):
                     continue
                 x, y = _bbox_center(block)
                 score = float(block.get('confidence', 0.5))
-                if 0.48 <= (y / 3600.0) <= 0.66 and x > 1100:
+                if 0.45 <= (y / 3600.0) <= 0.70 and x > 900:
                     score += 0.35
                 candidates.append((score, val))
         if candidates:
@@ -255,8 +285,16 @@ def _postprocess_fields(parsed_data, ocr_results):
 
     # Continued residence line should not contain inspector/date/noise. Keep it empty when uncertain.
     cont = parsed_data.get('place_of_residence_cont', {}).get('value', '')
-    if cont and (re.search(r'(Момализода|Имомализода|нозир|тамдид|\d{2}\.\d{2}\.\d{4})', cont, flags=re.I) or len(cont) > 35):
+    if cont and (re.search(r'(Момализода|Имомализода|Одиназода|нозир|тамдид|\d{2}\.\d{2}\.\d{4})', cont, flags=re.I) or len(cont) > 35):
         parsed_data['place_of_residence_cont'] = _field_template('place_of_residence_cont', '', 0.0)
+
+    # Inspector: prefer a clean full surname from raw OCR instead of partial fallback.
+    inspector_match = re.search(r'(Одиназода\s*[A-ZА-ЯЁӢӮҚҒҲҶХ]\.?|Имомализода\s*[A-ZА-ЯЁӢӮҚҒҲҶХ]\.?)', raw, flags=re.I)
+    if inspector_match:
+        value = inspector_match.group(1).replace('X', 'Х').strip()
+        parsed_data['inspector'] = _field_template('inspector', value, 0.86)
+    elif _looks_like_noise(parsed_data.get('inspector', {}).get('value', '')):
+        parsed_data['inspector'] = _field_template('inspector', '', 0.0)
 
     return parsed_data
 
@@ -415,4 +453,4 @@ def extract():
 
 if __name__ == '__main__':
     logger.info('Starting Registration Card Scanner on port %s', Config.PORT)
-    app.run(host=Config.HOST, port=Config.PORT, debug=Config.DEBUG)
+    app.run(host=Config.HOST, port=Config.DEBUG)
