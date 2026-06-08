@@ -102,17 +102,16 @@ def _detect_noise_level(img_rgb):
     return 'noisy' if colored_ratio > 0.15 else 'clean'
 
 
-def preprocess_image(file_path, enable_preprocessing=True):
+def preprocess_image(file_path, enable_preprocessing=True, fast_mode=False):
     """
     Preprocess image for optimal OCR with dual-pipeline approach.
 
-    Returns TWO preprocessed variants:
+    Returns THREE preprocessed variants:
       1. Aggressive: color removal (V=140) + red-ink grayscale + CLAHE 3.0
-         — best for noisy images with red/blue backgrounds and faint handwriting
-      2. Conservative: no color removal, standard grayscale + CLAHE 2.0
-         — best for clean images where color removal destroys text
+      2. Conservative: standard grayscale + CLAHE 2.0
+      3. Adaptive binary: deskewed threshold image (best for digits/dates)
 
-    OCR runs on both and results are merged, keeping the best text per region.
+    OCR runs on all variants and results are merged.
     Returns a list of NumPy arrays in RGB.
     """
     try:
@@ -150,8 +149,9 @@ def preprocess_image(file_path, enable_preprocessing=True):
         logger.info('Variant 1 deskewed by %.2f degrees', angle1)
     clahe1 = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8, 8))
     gray_v1 = clahe1.apply(gray_v1)
-    gray_v1 = cv2.fastNlMeansDenoising(gray_v1, h=5, templateWindowSize=7,
-                                        searchWindowSize=21)
+    if not fast_mode:
+        gray_v1 = cv2.fastNlMeansDenoising(gray_v1, h=5, templateWindowSize=7,
+                                            searchWindowSize=21)
     results.append(cv2.cvtColor(gray_v1, cv2.COLOR_GRAY2RGB))
 
     # Variant 2: Conservative — no color removal, standard pipeline
@@ -161,9 +161,25 @@ def preprocess_image(file_path, enable_preprocessing=True):
         logger.info('Variant 2 deskewed by %.2f degrees', angle2)
     clahe2 = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
     gray_v2 = clahe2.apply(gray_v2)
-    gray_v2 = cv2.fastNlMeansDenoising(gray_v2, h=5, templateWindowSize=7,
-                                        searchWindowSize=21)
+    if not fast_mode:
+        gray_v2 = cv2.fastNlMeansDenoising(gray_v2, h=5, templateWindowSize=7,
+                                            searchWindowSize=21)
     results.append(cv2.cvtColor(gray_v2, cv2.COLOR_GRAY2RGB))
 
-    logger.info('Dual-pipeline: returning %d variants', len(results))
+    if not fast_mode:
+        # Variant 3: Adaptive binary — strong for printed digits/dates (Tesseract-friendly)
+        gray_v3 = cv2.cvtColor(img_np, cv2.COLOR_RGB2GRAY)
+        gray_v3, _ = _deskew_image(gray_v3)
+        gray_v3 = cv2.GaussianBlur(gray_v3, (3, 3), 0)
+        binary = cv2.adaptiveThreshold(
+            gray_v3, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+            cv2.THRESH_BINARY, 31, 12,
+        )
+        binary = cv2.bitwise_not(binary)
+        kernel = np.ones((2, 2), np.uint8)
+        binary = cv2.morphologyEx(binary, cv2.MORPH_CLOSE, kernel)
+        results.append(cv2.cvtColor(binary, cv2.COLOR_GRAY2RGB))
+
+    logger.info('Multi-pipeline: returning %d variants (fast_mode=%s)',
+                len(results), fast_mode)
     return results

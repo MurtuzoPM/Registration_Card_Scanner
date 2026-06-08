@@ -3,6 +3,14 @@ import logging
 from difflib import SequenceMatcher
 from config import Config
 from ocr_engine.pattern_extractor import extract_global_patterns
+from ocr_engine.tajik_normalize import fuzzy_match_lexicon, get_field_values, normalize_text
+from ocr_engine.id_extractor import (
+    extract_passport_number,
+    extract_registration_card_number,
+    reconcile_id_fields,
+    _parse_passport_text,
+    _parse_card_number_text,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -295,6 +303,8 @@ def _fix_cyrillic_latin(text):
 
 
 def _looks_like_passport(text):
+    if _parse_passport_text(text):
+        return True
     text = _clean_number_value(text)
     text = re.sub(r'[^A-Za-z0-9]+$', '', text)
     return re.match(r'^([A-Za-z]{1,3})\s*([0-9OZSIBl]{6,8})$', text, re.IGNORECASE)
@@ -337,17 +347,23 @@ def _normalize_mia_value(text):
 
 
 def _normalize_citizenship(text):
-    value = text.strip(' .:;,-()')
+    value = normalize_text(text.strip(' .:;,-()'))
     lower = value.lower()
+    if 'греза' in lower or 'гуреза' in lower or re.search(r'\b(ниа|чиа)\b', lower):
+        return 'Хитой'
     known = {
-        'хиоц': 'Хитой',
-        'хиюош': 'Хитой',
-        'хиюц': 'Хитой',
-        'хигой': 'Хитой',
-        'хитои': 'Хитой',
-        'хитой': 'Хитой',
+        'хиоц': 'Хитой', 'хиюош': 'Хитой', 'хиюц': 'Хитой', 'хигой': 'Хитой',
+        'хитои': 'Хитой', 'хитой': 'Хитой', 'хитоц': 'Хитой', 'хито': 'Хитой',
+        'руссия': 'Руссия', 'россия': 'Россия',
+        'узбекистон': 'Узбекистон', 'узбекистан': 'Узбекистон',
+        'афгонистон': 'Афғонистон', 'афганистон': 'Афғонистон',
+        'ниа (гуреза': 'Хитой', 'чиа (гуреза': 'Хитой', 'ниа(гуреза': 'Хитой',
+        'ниа (греза': 'Хитой', 'чиа (греза': 'Хитой',
     }
-    return known.get(lower, value)
+    if lower in known:
+        return known[lower]
+    matched = fuzzy_match_lexicon(value, get_field_values('countries'))
+    return matched if matched else value
 
 
 def _has_cyrillic(text):
@@ -362,9 +378,11 @@ def _is_candidate_for_field(field_num, text):
 
     if field_num == 1:
         cleaned = _clean_number_value(text)
+        if re.fullmatch(r'\d{7}', cleaned) and cleaned.startswith('00'):
+            return False
         return bool(re.fullmatch(r'\d{6,10}', cleaned))
     if field_num == 2:
-        return bool(_looks_like_passport(text))
+        return bool(_parse_passport_text(text) or _looks_like_passport(text))
     if field_num in {5, 7, 13}:
         return _extract_date_from_text(text) is not None
     if field_num == 8:
@@ -605,6 +623,20 @@ class TextParser:
                 field_value_map[field_num] = (val, conf)
                 used_texts.add(val)
                 logger.info('Step 4: Positional fallback Field %d → "%s"', field_num, val)
+
+        # ------------------------------------------------------------------
+        # Step 5: Dedicated ID extraction (fixes passport/card swap)
+        # ------------------------------------------------------------------
+        w, h = img_width, img_height
+        card_hit = extract_registration_card_number(ocr_results, w, h)
+        pass_hit = extract_passport_number(ocr_results, w, h)
+        if card_hit:
+            field_value_map[1] = card_hit
+            used_texts.add(card_hit[0])
+        if pass_hit:
+            field_value_map[2] = pass_hit
+            used_texts.add(pass_hit[0])
+        field_value_map = reconcile_id_fields(field_value_map)
 
         # ------------------------------------------------------------------
         # Post-process: validate and clean each value
@@ -874,59 +906,14 @@ class TextParser:
             return None, 0.0
 
         if 'registration_card' in key.lower():
-            candidates = []
-            for block in text_blocks:
-                text = block['text'].strip()
-                if text in used_texts:
-                    continue
-                if _is_pure_label_text(text):
-                    continue
-                # Skip passport-like text
-                if re.search(r'[A-Za-z]{2,}\s?\d{5,}', text):
-                    continue
-                cleaned = _clean_number_value(text)
-                for t in [text, cleaned]:
-                    m = re.search(Config.REGISTRATION_CARD_PATTERN, t)
-                    if m:
-                        val = m.group()
-                        start, end = m.start(), m.end()
-                        if start > 0 and t[start - 1].isalnum():
-                            continue
-                        if end < len(t) and t[end].isalnum():
-                            continue
-                        if _is_pure_label_text(val):
-                            continue
-                        candidates.append((block['confidence'], val))
-            if candidates:
-                candidates.sort(key=lambda x: (-x[0], -len(x[1])))
-                return candidates[0][1], candidates[0][0]
+            hit = extract_registration_card_number(text_blocks, *self._compute_image_bounds(text_blocks))
+            if hit:
+                return hit[0], hit[1]
 
         if 'passport' in key.lower():
-            candidates = []
-            for block in text_blocks:
-                text = block['text'].strip()
-                if text in used_texts:
-                    continue
-                if _is_pure_label_text(text):
-                    continue
-                # Convert Cyrillic→Latin (OCR often misreads Cyrillic letters as Latin)
-                latin_text = _fix_cyrillic_latin(text)
-                # Clean prefix characters
-                stripped = _clean_number_value(text)
-                latin_stripped = _fix_cyrillic_latin(stripped)
-                # Remove trailing non-alphanumeric chars
-                stripped = re.sub(r'[^A-Za-z0-9]+$', '', stripped)
-                latin_stripped = re.sub(r'[^A-Za-z0-9]+$', '', latin_stripped)
-                for t in [text, stripped, latin_text, latin_stripped]:
-                    m = _looks_like_passport(t)
-                    if m:
-                        val = _normalize_passport(t)
-                        digit_count = sum(1 for c in val if c.isdigit())
-                        if digit_count >= 5:
-                            candidates.append((block['confidence'], val))
-            if candidates:
-                candidates.sort(key=lambda x: (-x[0], -len(x[1])))
-                return candidates[0][1], candidates[0][0]
+            hit = extract_passport_number(text_blocks, *self._compute_image_bounds(text_blocks))
+            if hit:
+                return hit[0], hit[1]
 
         if 'serial' in key.lower() or 'control' in key.lower():
             candidates = []
@@ -1042,8 +1029,17 @@ class TextParser:
             value = value.strip('.:;,- _')
             key = self.fields.get(field_num, {}).get('key', '')
 
-            # Reject very low confidence values (likely OCR noise)
-            if conf < 0.25:
+            # Field-specific confidence floors (text fields often score lower)
+            min_conf_by_key = {
+                'inspector': 0.18,
+                'name_and_surname': 0.20,
+                'place_of_residence': 0.20,
+                'place_of_residence_cont': 0.18,
+                'citizenship': 0.22,
+                'registration_card_number': 0.22,
+            }
+            min_conf = min_conf_by_key.get(key, 0.25)
+            if conf < min_conf:
                 logger.info('Post-process: rejecting low-confidence Field %d (conf=%.3f): "%s"',
                             field_num, conf, value)
                 continue
@@ -1055,19 +1051,17 @@ class TextParser:
                 continue
 
             if 'passport' in key.lower():
-                # Clean prefix; apply digit corrections only on digit portion
-                if _looks_like_passport(value):
-                    value = _normalize_passport(value)
+                parsed = _parse_passport_text(value)
+                if parsed:
+                    value = parsed
                 else:
-                    stripped = _clean_number_value(value)
-                    if len(stripped) < 4:
-                        logger.info('Post-process: rejecting short passport Field %d: "%s"', field_num, value)
-                        cleaned[field_num] = ('', 0.0)
-                        continue
-                    value = stripped
+                    logger.info('Post-process: rejecting non-passport Field %d: "%s"', field_num, value)
+                    cleaned[field_num] = ('', 0.0)
+                    continue
 
             elif 'registration_card' in key.lower():
-                value = _clean_number_value(value)
+                parsed = _parse_card_number_text(value)
+                value = parsed if parsed else _clean_number_value(value)
                 if not re.fullmatch(r'\d{6,10}', value):
                     logger.info('Post-process: rejecting non-numeric card number Field %d: "%s"', field_num, value)
                     cleaned[field_num] = ('', 0.0)
@@ -1088,11 +1082,11 @@ class TextParser:
                 value = _normalize_citizenship(value)
 
             elif key == 'prs_mia_rt':
-                value = _normalize_short_cyrillic_code(value)
-                if 'ВКД' in value:
-                    value = 'ХШБ ВКД ЧТ' if 'ХШБ' not in value else 'ХШБ ВКД ЧТ'
+                value = normalize_text(_normalize_short_cyrillic_code(value))
+                if re.search(r'ХШБ', value, re.I) or re.search(r'ВКД', value, re.I):
+                    value = 'ХШБ ВКД ЧТ'
                 elif value == 'ХВКД':
-                    value = 'ХШБ ВКД'
+                    value = 'ХШБ ВКД ЧТ'
 
             elif key == 'mia':
                 value = _normalize_mia_value(value)

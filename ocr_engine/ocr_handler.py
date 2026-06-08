@@ -1,270 +1,328 @@
 import re
 import logging
+from config import Config
+from .tajik_normalize import normalize_ocr_results
 
 logger = logging.getLogger(__name__)
 
 
 class OCRHandler:
-    """Handles OCR text extraction using EasyOCR with Cyrillic/Tajik support.
+    """Hybrid OCR: runs Tesseract AND EasyOCR, merges results.
 
-    Uses multi-pass scanning with different parameter sets to maximize
-    text extraction quality for Tajikistan registration cards.
+    Rationale: on Tajik registration cards, Tesseract is strong on numerics
+    (card numbers, dates) while EasyOCR is strong on Cyrillic words (names,
+    place names). Running both and merging the de-duplicated results gives
+    higher recall than either alone.
+
+    Output format preserved: list of dicts with text, confidence, bbox.
     """
 
-    def __init__(self, languages=None):
-        self.languages = languages or ['ru', 'en']
-        self.reader = None
-        self._init_reader()
+    TESS_LANGS = 'rus+tgk+eng'
 
-    def _init_reader(self):
-        """Initialize the EasyOCR reader."""
+    def __init__(self, languages=None, fast_mode=False, use_gpu=None):
+        self.languages = languages or ['ru', 'en']
+        self.fast_mode = fast_mode
+        self.use_gpu = Config.OCR_USE_GPU if use_gpu is None else use_gpu
+        self.easyocr_gpu = False
+        self.tesseract = None
+        self.reader = None
+        self.engines = []
+        self._init_engines()
+
+    def _auto_detect_gpu(self):
+        try:
+            import torch
+            return bool(torch.cuda.is_available())
+        except Exception:
+            return False
+
+    def _resolve_easyocr_gpu(self):
+        if self.use_gpu is None:
+            return self._auto_detect_gpu()
+        return bool(self.use_gpu)
+
+    def _init_engines(self):
+        # Tesseract
+        try:
+            import pytesseract
+            available = pytesseract.get_languages(config='')
+            if 'rus' not in available:
+                raise RuntimeError("Tesseract 'rus' pack missing")
+            self.tesseract = pytesseract
+            if 'tgk' not in available:
+                self.TESS_LANGS = 'rus+eng'
+            self.engines.append('tesseract')
+            logger.info('Tesseract initialized (langs=%s)', self.TESS_LANGS)
+        except Exception as exc:
+            logger.warning('Tesseract unavailable: %s', exc)
+
+        # EasyOCR
         try:
             import easyocr
-            logger.info('Initializing EasyOCR reader with languages: %s',
-                        self.languages)
-            self.reader = easyocr.Reader(self.languages, gpu=False)
-            logger.info('EasyOCR reader initialized successfully')
-        except ImportError:
-            logger.error('easyocr package is not installed')
-            raise
-        except Exception as e:
-            logger.error('Failed to initialize EasyOCR reader: %s', e)
-            raise
+            use_gpu = self._resolve_easyocr_gpu()
+            self.reader = easyocr.Reader(self.languages, gpu=use_gpu)
+            self.easyocr_gpu = use_gpu
+            self.engines.append('easyocr')
+            logger.info('EasyOCR initialized (gpu=%s)', use_gpu)
+        except Exception as exc:
+            logger.warning('EasyOCR unavailable: %s', exc)
 
+        if not self.engines:
+            raise RuntimeError('No OCR engine available — install pytesseract or easyocr')
+        logger.info('Hybrid OCR active with engines: %s', self.engines)
+
+    # ------------------------------------------------------------------
+    # Public API
+    # ------------------------------------------------------------------
     def extract_text(self, img_np):
-        """
-        Extract text from a NumPy image array using multi-pass OCR.
-        Returns a list of dicts with keys: text, confidence, bbox.
-        """
-        if self.reader is None:
-            raise RuntimeError('OCR reader not initialized')
+        all_raw = []
+        if 'tesseract' in self.engines:
+            try:
+                all_raw += [(*r, 'tesseract') for r in self._run_tesseract(img_np)]
+            except Exception as exc:
+                logger.warning('Tesseract run failed: %s', exc)
+        if 'easyocr' in self.engines:
+            try:
+                all_raw += [(*r, 'easyocr') for r in self._run_easyocr(img_np)]
+            except Exception as exc:
+                logger.warning('EasyOCR run failed: %s', exc)
 
-        logger.info('Running multi-pass OCR on image...')
+        merged = self._merge_cross_engine(all_raw)
 
-        # Pass 1: Fine-grained — individual text blocks, lower thresholds
-        results_pass1 = self._run_ocr_pass(
-            img_np,
-            detail=1,
-            paragraph=False,
-            contrast_ths=0.1,
-            adjust_contrast=0.5,
-            text_threshold=0.5,
-            low_text=0.3,
-            link_threshold=0.4,
-            canvas_size=2560,
-            mag_ratio=1.5,
-            width_ths=0.5,
-        )
-
-        # Pass 2: High-res — better for small or faint text
-        results_pass2 = self._run_ocr_pass(
-            img_np,
-            detail=1,
-            paragraph=False,
-            contrast_ths=0.05,
-            adjust_contrast=0.3,
-            text_threshold=0.4,
-            low_text=0.2,
-            link_threshold=0.3,
-            canvas_size=3200,
-            mag_ratio=2.5,
-            width_ths=0.5,
-        )
-
-        # Pass 3: Wide merge — groups nearby text for multi-word values
-        results_pass3 = self._run_ocr_pass(
-            img_np,
-            detail=1,
-            paragraph=False,
-            contrast_ths=0.1,
-            adjust_contrast=0.5,
-            text_threshold=0.5,
-            low_text=0.3,
-            link_threshold=0.6,
-            canvas_size=2560,
-            mag_ratio=1.5,
-            width_ths=0.9,
-        )
-
-        # Normalize all results to (bbox, text, confidence) tuples
-        results_pass1 = self._normalize_results(results_pass1)
-        results_pass2 = self._normalize_results(results_pass2)
-        results_pass3 = self._normalize_results(results_pass3)
-
-        # Merge results, preferring higher confidence
-        all_results = self._merge_pass_results(
-            results_pass1, results_pass2, results_pass3
-        )
-
-        # Filter and clean up
         extracted = []
-        seen_texts = set()
-        for bbox, text, confidence in all_results:
+        seen_keys = {}
+        for bbox, text, confidence, source in merged:
             text = self._clean_text(text)
-            if not text or len(text) < 1:
+            if not text or confidence < 0.05:
                 continue
-            if confidence < 0.05:
-                continue
-
-            # Deduplicate near-identical texts
-            text_key = text.lower().strip()
-            if text_key in seen_texts:
-                # Keep the higher confidence version
-                for existing in extracted:
-                    if existing['text'].lower().strip() == text_key:
-                        if confidence > existing['confidence']:
-                            existing['confidence'] = round(confidence, 3)
-                            existing['bbox'] = [[int(p[0]), int(p[1])] for p in bbox]
-                        break
-                continue
-            seen_texts.add(text_key)
-
-            extracted.append({
+            key = text.lower().strip()
+            entry = {
                 'text': text,
-                'confidence': round(confidence, 3),
+                'confidence': round(float(confidence), 3),
                 'bbox': [[int(p[0]), int(p[1])] for p in bbox],
-            })
-
-        logger.info('OCR completed: %d text blocks extracted', len(extracted))
-        return extracted
-
-    def _normalize_results(self, results):
-        """Ensure all OCR results are (bbox, text, confidence) 3-tuples.
-
-        EasyOCR can return either:
-          - (bbox, text, confidence) when detail=1
-          - (bbox, text) when paragraph=True or detail=0
-        This normalizes them all to 3-tuples.
-        """
-        normalized = []
-        for item in results:
-            if len(item) == 2:
-                bbox, text = item
-                confidence = 0.5
-                normalized.append((bbox, text, confidence))
-            elif len(item) == 3:
-                normalized.append(item)
-            elif len(item) >= 4:
-                bbox, text, confidence = item[0], item[1], item[2]
-                normalized.append((bbox, text, confidence))
-            else:
-                logger.warning('Unexpected OCR result format: %s', type(item))
-        return normalized
-
-    def _run_ocr_pass(self, img_np, **kwargs):
-        """Run a single OCR pass with specified parameters."""
-        try:
-            results = self.reader.readtext(img_np, **kwargs)
-            return results
-        except Exception as e:
-            logger.warning('OCR pass failed: %s', e)
-            return []
-
-    def _merge_pass_results(self, *result_sets):
-        """Merge multiple OCR pass results, keeping the best text for each region."""
-        all_results = []
-        for results in result_sets:
-            all_results.extend(results)
-
-        if not all_results:
-            return []
-
-        merged = []
-        used_indices = set()
-
-        for i, (bbox_i, text_i, conf_i) in enumerate(all_results):
-            if i in used_indices:
+            }
+            if key in seen_keys:
+                if entry['confidence'] > seen_keys[key]['confidence']:
+                    seen_keys[key].update(entry)
                 continue
-
-            best_idx = i
-            best_conf = conf_i
-            best_bbox = bbox_i
-            best_text = text_i
-
-            for j in range(i + 1, len(all_results)):
-                if j in used_indices:
-                    continue
-                bbox_j, text_j, conf_j = all_results[j]
-
-                if self._texts_overlap(text_i, text_j):
-                    # Prefer longer text (more complete) or higher confidence
-                    len_i = len(best_text.replace(' ', ''))
-                    len_j = len(text_j.replace(' ', ''))
-                    is_better = False
-                    if len_j > len_i and len_j >= len_i * 1.3:
-                        is_better = True
-                    elif conf_j > best_conf and abs(len_j - len_i) / max(len_i, 1) < 0.3:
-                        is_better = True
-                    if is_better:
-                        best_idx = j
-                        best_conf = conf_j
-                        best_bbox = bbox_j
-                        best_text = text_j
-                    used_indices.add(j)
-
-            merged.append((best_bbox, all_results[best_idx][1], best_conf))
-            used_indices.add(i)
-
-        return merged
-
-    def _texts_overlap(self, text1, text2):
-        """Check if two text strings are similar enough to be duplicates."""
-        t1 = text1.lower().strip()
-        t2 = text2.lower().strip()
-
-        if t1 == t2:
-            return True
-
-        if t1 in t2 or t2 in t1:
-            return True
-
-        if len(t1) > 3 and len(t2) > 3:
-            trigrams1 = set(t1[i:i+3] for i in range(len(t1) - 2))
-            trigrams2 = set(t2[i:i+3] for i in range(len(t2) - 2))
-            if trigrams1 and trigrams2:
-                overlap = len(trigrams1 & trigrams2)
-                union = len(trigrams1 | trigrams2)
-                if union > 0 and overlap / union > 0.6:
-                    return True
-
-        return False
-
-    def _clean_text(self, text):
-        """Clean up OCR text artifacts common in registration cards."""
-        if not text:
-            return ''
-
-        text = text.strip()
-
-        # Fix common Unicode artifacts
-        replacements = {
-            '\u00a9': '\u0441',    # © → Cyrillic с
-            '\u00ae': '\u0440',    # ® → Cyrillic р
-            '\u2122': '\u0442',    # ™ → Cyrillic т
-            '\u2014': '-',         # em dash
-            '\u2013': '-',         # en dash
-            '\u200b': '',          # zero-width space
-            '\xa0': ' ',           # non-breaking space
-            '\u20ac': 'E',         # € → E
-            '\u0456': '\u0438',    # і → Cyrillic и
-            '\u0457': '\u0451',    # ї → ё
-        }
-        for old, new in replacements.items():
-            text = text.replace(old, new)
-
-        # Remove leading/trailing non-alphanumeric tokens except for codes
-        text = re.sub(r'^[\'"(*\s]+', '', text)
-        text = re.sub(r'[\'")*\s]+$', '', text)
-
-        text = re.sub(r'\s+', ' ', text)
-
-        return text.strip()
+            seen_keys[key] = entry
+            extracted.append(entry)
+        logger.info('Hybrid OCR: %d unique text blocks (from %d raw)',
+                    len(extracted), len(all_raw))
+        return normalize_ocr_results(extracted)
 
     def extract_text_with_positions(self, img_np):
-        """
-        Extract text with detailed position information.
-        Returns sorted list (top-to-bottom, left-to-right).
-        """
         results = self.extract_text(img_np)
         results.sort(key=lambda x: (x['bbox'][0][1], x['bbox'][0][0]))
         return results
+
+    # ------------------------------------------------------------------
+    # Tesseract backend
+    # ------------------------------------------------------------------
+    def _run_tesseract(self, img_np):
+        psms = [6, 11, 4]  # 4 = single column — helps dates/numbers on cards
+        out = []
+        for psm in psms:
+            try:
+                cfg = f'--oem 3 --psm {psm}'
+                data = self.tesseract.image_to_data(
+                    img_np, lang=self.TESS_LANGS, config=cfg,
+                    output_type=self.tesseract.Output.DICT,
+                )
+            except Exception as exc:
+                logger.warning('Tesseract PSM %d failed: %s', psm, exc)
+                continue
+            n = len(data.get('text', []))
+            for i in range(n):
+                text = (data['text'][i] or '').strip()
+                if not text:
+                    continue
+                try:
+                    conf = float(data['conf'][i])
+                except (ValueError, TypeError):
+                    conf = -1
+                if conf < 25:
+                    continue
+                x, y = int(data['left'][i]), int(data['top'][i])
+                w, h = int(data['width'][i]), int(data['height'][i])
+                bbox = [[x, y], [x + w, y], [x + w, y + h], [x, y + h]]
+                out.append((bbox, text, conf / 100.0))
+
+        # Supplemental digit-focused pass (local, no external API)
+        try:
+            cfg = '--oem 3 --psm 6 -c tessedit_char_whitelist=0123456789./№-'
+            data = self.tesseract.image_to_data(
+                img_np, lang='eng', config=cfg,
+                output_type=self.tesseract.Output.DICT,
+            )
+            n = len(data.get('text', []))
+            for i in range(n):
+                text = (data['text'][i] or '').strip()
+                if not text or len(text) < 3:
+                    continue
+                try:
+                    conf = float(data['conf'][i])
+                except (ValueError, TypeError):
+                    conf = -1
+                if conf < 30:
+                    continue
+                x, y = int(data['left'][i]), int(data['top'][i])
+                w, h = int(data['width'][i]), int(data['height'][i])
+                bbox = [[x, y], [x + w, y], [x + w, y + h], [x, y + h]]
+                out.append((bbox, text, conf / 100.0))
+        except Exception as exc:
+            logger.debug('Tesseract digit pass skipped: %s', exc)
+
+        return out
+
+    # ------------------------------------------------------------------
+    # EasyOCR backend
+    # ------------------------------------------------------------------
+    def _run_easyocr(self, img_np):
+        p1 = self._easyocr_pass(img_np, canvas_size=2560, mag_ratio=1.5,
+                                text_threshold=0.5, low_text=0.3,
+                                link_threshold=0.4, width_ths=0.5)
+        if self.fast_mode:
+            return self._merge_overlapping(self._normalize(p1))
+        p2 = self._easyocr_pass(img_np, canvas_size=3200, mag_ratio=2.5,
+                                text_threshold=0.4, low_text=0.2,
+                                link_threshold=0.3, width_ths=0.5)
+        raw = self._normalize(p1) + self._normalize(p2)
+        return self._merge_overlapping(raw)
+
+    def _easyocr_pass(self, img_np, **kwargs):
+        try:
+            return self.reader.readtext(
+                img_np, detail=1, paragraph=False,
+                contrast_ths=0.1, adjust_contrast=0.5, **kwargs,
+            )
+        except Exception as e:
+            logger.warning('EasyOCR pass failed: %s', e)
+            return []
+
+    def _normalize(self, results):
+        out = []
+        for item in results:
+            if len(item) == 2:
+                out.append((item[0], item[1], 0.5))
+            elif len(item) >= 3:
+                out.append((item[0], item[1], item[2]))
+        return out
+
+    # ------------------------------------------------------------------
+    # Cross-engine merge: per-region take the higher-confidence detection,
+    # but for purely-numeric text prefer Tesseract; for Cyrillic words
+    # prefer EasyOCR.
+    # ------------------------------------------------------------------
+    def _bbox_iou(self, a, b):
+        ax1 = min(p[0] for p in a); ay1 = min(p[1] for p in a)
+        ax2 = max(p[0] for p in a); ay2 = max(p[1] for p in a)
+        bx1 = min(p[0] for p in b); by1 = min(p[1] for p in b)
+        bx2 = max(p[0] for p in b); by2 = max(p[1] for p in b)
+        ix1, iy1 = max(ax1, bx1), max(ay1, by1)
+        ix2, iy2 = min(ax2, bx2), min(ay2, by2)
+        iw, ih = max(0, ix2 - ix1), max(0, iy2 - iy1)
+        inter = iw * ih
+        ua = (ax2 - ax1) * (ay2 - ay1) + (bx2 - bx1) * (by2 - by1) - inter
+        return inter / ua if ua > 0 else 0
+
+    def _is_mostly_numeric(self, s):
+        digits = sum(c.isdigit() for c in s)
+        return len(s) > 0 and digits / len(s) >= 0.6
+
+    def _is_cyrillic_word(self, s):
+        cyr = sum(1 for c in s if '\u0400' <= c <= '\u04ff')
+        return len(s) > 2 and cyr / max(len(s), 1) >= 0.5
+
+    def _merge_cross_engine(self, all_raw):
+        if not all_raw:
+            return []
+        merged = []
+        used = set()
+        for i, (bb_i, t_i, c_i, src_i) in enumerate(all_raw):
+            if i in used:
+                continue
+            best = (bb_i, t_i, c_i, src_i)
+            used.add(i)
+            for j in range(i + 1, len(all_raw)):
+                if j in used:
+                    continue
+                bb_j, t_j, c_j, src_j = all_raw[j]
+                if self._bbox_iou(best[0], bb_j) < 0.3 and \
+                        not self._texts_overlap(best[1], t_j):
+                    continue
+                used.add(j)
+                # Decide which wins
+                a_num = self._is_mostly_numeric(best[1])
+                b_num = self._is_mostly_numeric(t_j)
+                a_cyr = self._is_cyrillic_word(best[1])
+                b_cyr = self._is_cyrillic_word(t_j)
+                # Numeric: prefer Tesseract
+                if a_num or b_num:
+                    if best[3] == 'tesseract' and src_j != 'tesseract':
+                        pass
+                    elif src_j == 'tesseract' and best[3] != 'tesseract':
+                        best = (bb_j, t_j, c_j, src_j)
+                    elif c_j > best[2]:
+                        best = (bb_j, t_j, c_j, src_j)
+                # Cyrillic: prefer EasyOCR
+                elif a_cyr or b_cyr:
+                    rank = {'easyocr': 1, 'tesseract': 0}
+                    if rank.get(src_j, 0) > rank.get(best[3], 0):
+                        best = (bb_j, t_j, c_j, src_j)
+                    elif rank.get(src_j, 0) == rank.get(best[3], 0) and c_j > best[2]:
+                        best = (bb_j, t_j, c_j, src_j)
+                else:
+                    if c_j > best[2]:
+                        best = (bb_j, t_j, c_j, src_j)
+            merged.append(best)
+        return merged
+
+    def _merge_overlapping(self, all_results):
+        if not all_results:
+            return []
+        merged = []
+        used = set()
+        for i, (bb_i, t_i, c_i) in enumerate(all_results):
+            if i in used:
+                continue
+            best = (bb_i, t_i, c_i)
+            used.add(i)
+            for j in range(i + 1, len(all_results)):
+                if j in used:
+                    continue
+                bb_j, t_j, c_j = all_results[j]
+                if self._texts_overlap(best[1], t_j):
+                    if (len(t_j) > len(best[1]) * 1.3) or \
+                       (c_j > best[2] and abs(len(t_j) - len(best[1])) / max(len(best[1]), 1) < 0.3):
+                        best = (bb_j, t_j, c_j)
+                    used.add(j)
+            merged.append(best)
+        return merged
+
+    def _texts_overlap(self, a, b):
+        a = a.lower().strip(); b = b.lower().strip()
+        if a == b or a in b or b in a:
+            return True
+        if len(a) > 3 and len(b) > 3:
+            t1 = set(a[i:i+3] for i in range(len(a)-2))
+            t2 = set(b[i:i+3] for i in range(len(b)-2))
+            u = len(t1 | t2)
+            return u > 0 and len(t1 & t2) / u > 0.6
+        return False
+
+    def _clean_text(self, text):
+        if not text:
+            return ''
+        text = text.strip()
+        replacements = {
+            '\u00a9': '\u0441', '\u00ae': '\u0440', '\u2122': '\u0442',
+            '\u2014': '-', '\u2013': '-', '\u200b': '', '\xa0': ' ',
+            '\u20ac': 'E', '\u0456': '\u0438', '\u0457': '\u0451',
+        }
+        for o, n in replacements.items():
+            text = text.replace(o, n)
+        text = re.sub(r"^['\"(*\s]+", '', text)
+        text = re.sub(r"['\")*\s]+$", '', text)
+        text = re.sub(r'\s+', ' ', text)
+        return text.strip()

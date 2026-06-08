@@ -1,5 +1,20 @@
 import os
 
+
+def _env_flag(name, default=False):
+    return os.environ.get(name, '1' if default else '0').strip().lower() in (
+        '1', 'true', 'yes', 'on',
+    )
+
+
+def _env_optional_bool(name):
+    value = os.environ.get(name, 'auto').strip().lower()
+    if value in ('1', 'true', 'yes', 'on'):
+        return True
+    if value in ('0', 'false', 'no', 'off'):
+        return False
+    return None
+
 class Config:
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
     UPLOAD_FOLDER = os.path.join(BASE_DIR, 'uploads')
@@ -10,12 +25,17 @@ class Config:
     OCR_LANGUAGES = ['ru', 'en']
     OCR_ENGINE = 'easyocr'
     ENABLE_IMAGE_PREPROCESSING = True
+    # False = 3 preprocess variants + dual EasyOCR (slow, best accuracy on CPU)
+    # True  = 2 variants + single EasyOCR pass (~2-3x faster)
+    OCR_FAST_MODE = _env_flag('OCR_FAST_MODE', default=True)
+    # OCR_USE_GPU=true/false to force behavior, or "auto" to detect CUDA (default)
+    OCR_USE_GPU = _env_optional_bool('OCR_USE_GPU')
     MAX_PROCESSING_TIME = 60  # seconds
 
     # Server
-    HOST = '0.0.0.0'
-    PORT = 5001
-    DEBUG = True
+    HOST = os.environ.get('HOST', '0.0.0.0')
+    PORT = int(os.environ.get('PORT', '5001'))
+    DEBUG = _env_flag('DEBUG', default=False)
 
     # Registration card fields — English keys, Tajik labels on card
     FIELDS = {

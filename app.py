@@ -2,9 +2,11 @@ import os
 import uuid
 import logging
 from flask import Flask, request, jsonify, render_template
-from werkzeug.utils import secure_filename
 from config import Config
-from ocr_engine import validate_image, preprocess_image, OCRHandler, TextParser
+from ocr_engine import (
+    validate_image, preprocess_image, OCRHandler, TextParser,
+    merge_ocr_blocks, merge_parsed_fields,
+)
 
 # Configure logging
 logging.basicConfig(
@@ -21,7 +23,10 @@ app.config['UPLOAD_FOLDER'] = Config.UPLOAD_FOLDER
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 # Initialize OCR engine and parser
-ocr_handler = OCRHandler(languages=Config.OCR_LANGUAGES)
+ocr_handler = OCRHandler(
+    languages=Config.OCR_LANGUAGES,
+    fast_mode=Config.OCR_FAST_MODE,
+)
 text_parser = TextParser()
 
 
@@ -43,6 +48,8 @@ def health():
         'status': 'healthy',
         'ocr_engine': Config.OCR_ENGINE,
         'languages': Config.OCR_LANGUAGES,
+        'fast_mode': Config.OCR_FAST_MODE,
+        'gpu_enabled': getattr(ocr_handler, 'easyocr_gpu', False),
         'fields_count': len(Config.FIELDS),
         'fields': {str(k): v['label'] for k, v in Config.FIELDS.items()},
     })
@@ -87,30 +94,31 @@ def extract():
         logger.info(f'Processing image: {file_path}')
         processed_images = preprocess_image(
             file_path,
-            enable_preprocessing=Config.ENABLE_IMAGE_PREPROCESSING
+            enable_preprocessing=Config.ENABLE_IMAGE_PREPROCESSING,
+            fast_mode=Config.OCR_FAST_MODE,
         )
 
-        # Run OCR + parse on each variant independently, then merge field results
-        best_fields = {}
-        all_raw_ocr = []
+        # Run OCR on every preprocessed variant; merge parse results + merged OCR pass
+        per_pass_ocr = []
+        per_pass_parsed = []
         for img in processed_images:
             ocr_results = ocr_handler.extract_text_with_positions(img)
-            all_raw_ocr.extend(ocr_results)
-            parsed = text_parser.parse(ocr_results)
-            for key, data in parsed.items():
-                if data['value'] and (
-                    key not in best_fields or
-                    data['confidence'] > best_fields[key]['confidence']
-                ):
-                    best_fields[key] = data
+            per_pass_ocr.append(ocr_results)
+            per_pass_parsed.append(text_parser.parse(ocr_results))
 
-        # Deduplicate raw OCR for response
-        seen = {}
-        for r in all_raw_ocr:
-            k = r['text'].lower().strip()
-            if k not in seen or r['confidence'] > seen[k]['confidence']:
-                seen[k] = r
-        ocr_results = sorted(seen.values(), key=lambda x: (x['bbox'][0][1], x['bbox'][0][0]))
+        best_fields = merge_parsed_fields(per_pass_parsed)
+
+        # Fill gaps using OCR merged across all variants (higher recall)
+        merged_ocr = merge_ocr_blocks(per_pass_ocr)
+        parsed_merged = text_parser.parse(merged_ocr)
+        for key, data in parsed_merged.items():
+            if data['value'] and (
+                key not in best_fields
+                or data['confidence'] > best_fields[key]['confidence']
+            ):
+                best_fields[key] = data
+
+        ocr_results = merged_ocr
 
         # Build merged parsed data with empty fields for missing keys
         parsed_data = {}
@@ -126,6 +134,9 @@ def extract():
                 }
 
         confidence = text_parser.get_confidence_score(parsed_data)
+        fields_extracted = sum(1 for d in parsed_data.values() if d['value'])
+        fields_total = len(Config.FIELDS)
+        completeness = round(fields_extracted / fields_total, 3) if fields_total else 0.0
 
         # Build response
         fields = {}
@@ -141,6 +152,9 @@ def extract():
             'success': True,
             'fields': fields,
             'confidence': confidence,
+            'fields_extracted': fields_extracted,
+            'fields_total': fields_total,
+            'completeness': completeness,
             'raw_ocr': [
                 {'text': r['text'], 'confidence': r['confidence'], 'bbox': r['bbox']}
                 for r in ocr_results

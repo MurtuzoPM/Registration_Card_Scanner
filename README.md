@@ -40,6 +40,36 @@ python app.py
 http://localhost:5001
 ```
 
+## Running in Google Colab
+
+For heavier OCR workloads, run the project in Colab and enable GPU:
+
+1. In Colab, set **Runtime → Change runtime type → GPU**
+2. Run:
+
+```bash
+!git clone https://github.com/MurtuzoPM/Registration_Card_Scanner.git
+%cd Registration_Card_Scanner/registration-card
+!apt-get update -y
+!apt-get install -y tesseract-ocr tesseract-ocr-rus
+!pip install -r requirements.txt
+```
+
+3. Set runtime flags and start API:
+
+```bash
+%env OCR_USE_GPU=1
+%env OCR_FAST_MODE=1
+%env DEBUG=0
+!python app.py
+```
+
+4. In another Colab cell, test API:
+
+```bash
+!curl -s http://127.0.0.1:5001/health
+```
+
 ### Testing the API
 
 Test the health endpoint:
@@ -111,7 +141,7 @@ For best results:
    - Place of Residence Continuation (Field 11)
    - Date of Registration/Extension (Field 13)
 3. **Cyrillic Recognition**: Some Cyrillic characters may be confused with Latin lookalikes
-4. **Processing Time**: 5-15 seconds per image (CPU only)
+4. **Processing Time**: 5-15 seconds per image on CPU (typically faster on GPU/Colab)
 
 For detailed performance analysis, see [PERFORMANCE_AND_LIMITATIONS.md](PERFORMANCE_AND_LIMITATIONS.md).
 
@@ -135,7 +165,9 @@ registration-card/
 Edit `config.py` to customize:
 
 - **OCR Languages**: Default is Russian + English
+- **GPU mode**: Auto-detect CUDA, or force on/off with `OCR_USE_GPU`
 - **Image Preprocessing**: Enable/disable preprocessing
+- **OCR speed mode**: Set `OCR_FAST_MODE` for lower CPU usage
 - **File Upload**: Max file size, allowed formats
 - **Server**: Host, port, debug mode
 - **Field Definitions**: Customize field keywords and patterns
@@ -148,6 +180,8 @@ You can also set configuration via environment variables (using python-dotenv):
 OCR_LANGUAGES=ru,en
 OCR_ENGINE=easyocr
 ENABLE_IMAGE_PREPROCESSING=true
+OCR_FAST_MODE=1
+OCR_USE_GPU=auto
 PORT=5001
 DEBUG=false
 ```
@@ -164,6 +198,8 @@ Health check endpoint.
   "status": "healthy",
   "ocr_engine": "easyocr",
   "languages": ["ru", "en"],
+  "fast_mode": true,
+  "gpu_enabled": true,
   "fields_count": 13,
   "fields": {
     "1": "Registration Card Number",

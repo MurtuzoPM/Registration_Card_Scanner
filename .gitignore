@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+
+# Virtual environment
+venv/
+.venv/
+
+# Uploads (runtime data)
+uploads/*
+!uploads/.gitkeep
+
+# Debug and test output
+debug_*.json
+ocr_result*.json
+ocr_coords.txt
+test_*.json
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Qoder CLI
+.qoder/
