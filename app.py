@@ -1,4 +1,5 @@
 import os
+import re
 import uuid
 import logging
 from flask import Flask, request, jsonify, render_template
@@ -29,6 +30,9 @@ ocr_handler = OCRHandler(
 )
 text_parser = TextParser()
 
+DATE_RE = re.compile(r'(?<!\d)(\d{1,2})[./,\-\s]+(\d{1,2})[./,\-\s]+(\d{2,4})(?!\d)')
+DIGIT_FIX = str.maketrans({'O': '0', 'О': '0', 'o': '0', 'о': '0', 'I': '1', 'l': '1', 'L': '1', 'S': '5', 'З': '3', 'з': '3', 'B': '8'})
+
 
 def allowed_file(filename):
     return '.' in filename and \
@@ -54,11 +58,11 @@ def _prefer_field(existing, candidate):
 
     # Structured ROI/regex values are usually better for IDs and dates even if
     # OCR confidence is similar.
-    structured_sources = {'roi', 'position_date', 'global_regex'}
+    structured_sources = {'roi', 'position_date', 'global_regex', 'postprocess'}
     if candidate.get('source') in structured_sources:
-        if candidate_conf >= existing_conf - 0.08:
+        if candidate_conf >= existing_conf - 0.12:
             return candidate
-        if len(candidate_value) > len(existing_value) and candidate_conf >= existing_conf - 0.18:
+        if len(candidate_value) > len(existing_value) and candidate_conf >= existing_conf - 0.22:
             return candidate
 
     if candidate_conf > existing_conf:
@@ -73,6 +77,188 @@ def _put_best_field(best_fields, key, candidate):
         best_fields[key] = selected
     elif key in best_fields and not _is_valid_field(best_fields.get(key)):
         best_fields.pop(key, None)
+
+
+def _field_template(key, value, confidence=0.78, source='postprocess'):
+    for num, info in Config.FIELDS.items():
+        if info['key'] == key:
+            return {
+                'value': value,
+                'confidence': round(float(confidence), 3),
+                'label': info['label'],
+                'field_number': num,
+                'source': source,
+            }
+    return {'value': value, 'confidence': confidence, 'label': key, 'field_number': None, 'source': source}
+
+
+def _raw_text(ocr_results):
+    return ' '.join(str(r.get('text', '')) for r in (ocr_results or []))
+
+
+def _norm_date(text):
+    match = DATE_RE.search((text or '').translate(DIGIT_FIX))
+    if not match:
+        return None
+    d, m, y = match.groups()
+    d, m = d.zfill(2), m.zfill(2)
+    if len(y) == 2:
+        y = '20' + y if int(y) < 80 else '19' + y
+    if 1 <= int(d) <= 31 and 1 <= int(m) <= 12:
+        return f'{d}.{m}.{y}'
+    return None
+
+
+def _date_digits(value):
+    return re.sub(r'\D', '', value or '')
+
+
+def _looks_like_year_or_date_digits(value, dates):
+    digits = _date_digits(value)
+    if not digits:
+        return False
+    if '2026' in digits or '2025' in digits or '2024' in digits:
+        return True
+    return any(digits and (digits in _date_digits(d) or _date_digits(d) in digits) for d in dates if d)
+
+
+def _bbox_center(block):
+    bbox = block.get('bbox') or [[0, 0], [0, 0]]
+    xs = [p[0] for p in bbox]
+    ys = [p[1] for p in bbox]
+    return (min(xs) + max(xs)) / 2, (min(ys) + max(ys)) / 2
+
+
+def _postprocess_fields(parsed_data, ocr_results):
+    """Final sanity layer to avoid common cross-field OCR mix-ups."""
+    raw = _raw_text(ocr_results)
+    raw_l = raw.lower()
+
+    # Name: keep only normal name words and remove trailing OCR garbage like "ин Р".
+    name = parsed_data.get('name_and_surname', {}).get('value', '')
+    if name:
+        name = re.sub(r'\b(ШАҲРВАНД[ӢИ]|ШАХРВАНД[ИӢ])\b', ' ', name, flags=re.I)
+        name = re.sub(r'\bин\b', ' ', name, flags=re.I)
+        parts = [p for p in re.split(r'\s+', name.strip()) if p]
+        while parts and (len(parts[-1]) <= 2 or not re.search(r'[А-Яа-яЁёӢӣӮӯҚқҒғҲҳҶҷ]', parts[-1])):
+            parts.pop()
+        name = ' '.join(parts[:4]).strip()
+        if name:
+            parsed_data['name_and_surname'] = _field_template('name_and_surname', name, max(parsed_data['name_and_surname'].get('confidence', 0.75), 0.82))
+
+    # Normalize common PRS/MIA abbreviation. Reject random handwritten noise.
+    prs = parsed_data.get('prs_mia_rt', {}).get('value', '')
+    if (('хшб' in raw_l) or ('вкд' in raw_l)) and (not prs or 'вкд' not in prs.lower() or 'хшб' not in prs.lower()):
+        parsed_data['prs_mia_rt'] = _field_template('prs_mia_rt', 'ХШБ ВКД ҶТ', 0.82)
+    elif prs and not re.search(r'(хшб|вкд|ҷт|чт)', prs, flags=re.I):
+        parsed_data['prs_mia_rt'] = _field_template('prs_mia_rt', '', 0.0)
+
+    # Dates: if registration date was accidentally copied from valid_until, clear it
+    # unless a structured ROI/position parser produced it.
+    reg_date = parsed_data.get('date_of_registration', {}).get('value', '')
+    valid_until = parsed_data.get('valid_until', {}).get('value', '')
+    reg_src = parsed_data.get('date_of_registration', {}).get('source')
+    if reg_date and valid_until and reg_date == valid_until and reg_src not in {'roi', 'position_date', 'postprocess'}:
+        parsed_data['date_of_registration'] = _field_template('date_of_registration', '', 0.0)
+
+    # Prefer a different date before valid_until as date_of_registration when present in raw OCR.
+    all_dates = []
+    for block in ocr_results or []:
+        d = _norm_date(str(block.get('text', '')))
+        if d:
+            _, y = _bbox_center(block)
+            conf = float(block.get('confidence', 0.6))
+            all_dates.append((y, d, conf))
+    all_dates.sort(key=lambda x: x[0])
+    unique_dates = []
+    for _, d, c in all_dates:
+        if d not in [u[0] for u in unique_dates]:
+            unique_dates.append((d, c))
+    if valid_until:
+        earlier = [d for d, c in unique_dates if d != valid_until]
+        if earlier and (not parsed_data.get('date_of_registration', {}).get('value') or parsed_data['date_of_registration']['value'] == valid_until):
+            parsed_data['date_of_registration'] = _field_template('date_of_registration', earlier[0], 0.84)
+    if not parsed_data.get('date_of_registration_extension', {}).get('value'):
+        # Bottom extension date is often the same as initial registration date.
+        if parsed_data.get('date_of_registration', {}).get('value'):
+            parsed_data['date_of_registration_extension'] = _field_template(
+                'date_of_registration_extension', parsed_data['date_of_registration']['value'], 0.72
+            )
+
+    # Registration card number: must not be a date, year fragment, passport suffix, or serial.
+    dates = [parsed_data.get('date_of_registration', {}).get('value', ''), parsed_data.get('valid_until', {}).get('value', '')]
+    passport = parsed_data.get('passport_number', {}).get('value', '')
+    reg = parsed_data.get('registration_card_number', {}).get('value', '')
+    if reg and (_looks_like_year_or_date_digits(reg, dates) or (passport and _date_digits(reg) in _date_digits(passport))):
+        parsed_data['registration_card_number'] = _field_template('registration_card_number', '', 0.0)
+
+    # Search raw OCR for a better 6-8 digit top/card number, excluding dates and passport digits.
+    if not parsed_data.get('registration_card_number', {}).get('value'):
+        candidates = []
+        for block in ocr_results or []:
+            text = str(block.get('text', '')).translate(DIGIT_FIX)
+            for m in re.finditer(r'(?<!\d)(\d{6,8})(?!\d)', text):
+                val = m.group(1)
+                if _looks_like_year_or_date_digits(val, dates):
+                    continue
+                if passport and val in _date_digits(passport):
+                    continue
+                x, y = _bbox_center(block)
+                # Top half is more likely to be the red registration card number.
+                score = float(block.get('confidence', 0.5)) + (0.25 if y < 1400 else 0.0) + (0.15 if len(val) == 7 else 0.0)
+                candidates.append((score, val))
+        if candidates:
+            candidates.sort(reverse=True)
+            parsed_data['registration_card_number'] = _field_template('registration_card_number', candidates[0][1], 0.84)
+
+    # Serial/control number: reject passport suffixes and date fragments, then choose a 4-digit
+    # candidate around the valid-until/serial row when possible.
+    serial = parsed_data.get('serial_control_number', {}).get('value', '')
+    reg = parsed_data.get('registration_card_number', {}).get('value', '')
+    if serial and (
+        _looks_like_year_or_date_digits(serial, dates)
+        or (passport and serial in _date_digits(passport))
+        or (reg and serial in _date_digits(reg))
+    ):
+        parsed_data['serial_control_number'] = _field_template('serial_control_number', '', 0.0)
+
+    if not parsed_data.get('serial_control_number', {}).get('value'):
+        candidates = []
+        for block in ocr_results or []:
+            text = str(block.get('text', '')).translate(DIGIT_FIX)
+            for m in re.finditer(r'(?<!\d)(\d{4})(?!\d)', text):
+                val = m.group(1)
+                if val in {'2024', '2025', '2026'}:
+                    continue
+                if passport and val in _date_digits(passport):
+                    continue
+                if reg and val in _date_digits(reg):
+                    continue
+                if any(val in _date_digits(d) for d in dates if d):
+                    continue
+                x, y = _bbox_center(block)
+                score = float(block.get('confidence', 0.5))
+                if 0.48 <= (y / 3600.0) <= 0.66 and x > 1100:
+                    score += 0.35
+                candidates.append((score, val))
+        if candidates:
+            candidates.sort(reverse=True)
+            parsed_data['serial_control_number'] = _field_template('serial_control_number', candidates[0][1], 0.84)
+
+    # Place of residence: prefer explicit city pattern from OCR over random fallback words.
+    place = parsed_data.get('place_of_residence', {}).get('value', '')
+    city_match = re.search(r'(ш\.?\s*[А-Яа-яЁёӢӣӮӯҚқҒғҲҳҶҷ]{3,20})', raw)
+    if city_match:
+        parsed_data['place_of_residence'] = _field_template('place_of_residence', city_match.group(1).replace('ш ', 'ш. '), 0.83)
+    elif place and not re.search(r'(ш\.?|ноҳия|нохия|ҷамоат|чамоат|к\.?|куча|вил\.?|вилоят)', place, flags=re.I):
+        parsed_data['place_of_residence'] = _field_template('place_of_residence', '', 0.0)
+
+    # Continued residence line should not contain inspector/date/noise. Keep it empty when uncertain.
+    cont = parsed_data.get('place_of_residence_cont', {}).get('value', '')
+    if cont and (re.search(r'(Момализода|Имомализода|нозир|тамдид|\d{2}\.\d{2}\.\d{4})', cont, flags=re.I) or len(cont) > 35):
+        parsed_data['place_of_residence_cont'] = _field_template('place_of_residence_cont', '', 0.0)
+
+    return parsed_data
 
 
 @app.route('/')
@@ -178,6 +364,8 @@ def extract():
                     'label': field_info['label'],
                     'field_number': field_num,
                 }
+
+        parsed_data = _postprocess_fields(parsed_data, ocr_results)
 
         confidence = text_parser.get_confidence_score(parsed_data)
         fields_extracted = sum(1 for d in parsed_data.values() if _is_valid_field(d) and d.get('value'))
