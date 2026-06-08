@@ -56,8 +56,6 @@ def _prefer_field(existing, candidate):
     existing_value = str(existing.get('value', ''))
     candidate_value = str(candidate.get('value', ''))
 
-    # Structured ROI/regex values are usually better for IDs and dates even if
-    # OCR confidence is similar.
     structured_sources = {'roi', 'position_date', 'global_regex', 'postprocess'}
     if candidate.get('source') in structured_sources:
         if candidate_conf >= existing_conf - 0.12:
@@ -145,22 +143,17 @@ def _postprocess_fields(parsed_data, ocr_results):
     raw = _raw_text(ocr_results)
     raw_l = raw.lower()
 
-    # Passport: common Tajik cards use N + digits, and OCR often reads the prefix as №.
-    # Prefer this over random global matches such as MEP2551125.
     passport_match = re.search(r'(?:№|N|Н)\s*([0-9OОoоIІlL|BЗзS]{7,8})\b', raw, flags=re.I)
     if passport_match:
         digits = passport_match.group(1).translate(DIGIT_FIX)
         parsed_data['passport_number'] = _field_template('passport_number', f'N{digits}', 0.86)
 
-    # Citizenship: keep only the citizenship value, not the following name line.
     if re.search(r'[#ЦC]?[ИI]А\s*\(?\s*[ГгУу]р[еcс]з', raw, flags=re.I):
         parsed_data['citizenship'] = _field_template('citizenship', 'ЧИА (гуреза)', 0.86)
 
-    # Name: keep only normal name words and remove trailing OCR garbage like "ин Р".
     name = parsed_data.get('name_and_surname', {}).get('value', '')
     name_match = re.search(r'(?:Н?а?зари|зари)\s+([А-Яа-яЁёӢӣӮӯҚқҒғҲҳҶҷ]{3,30})', raw, flags=re.I)
     if name_match:
-        # OCR often drops the first syllable of "Назарӣ" and returns "зари".
         parsed_data['name_and_surname'] = _field_template('name_and_surname', f'Назарӣ {name_match.group(1)}', 0.86)
     elif name:
         name = re.sub(r'\b(ШАҲРВАНД[ӢИ]|ШАХРВАНД[ИӢ])\b', ' ', name, flags=re.I)
@@ -168,7 +161,6 @@ def _postprocess_fields(parsed_data, ocr_results):
         parts = [p for p in re.split(r'\s+', name.strip()) if p]
         while parts and (len(parts[-1]) <= 2 or not re.search(r'[А-Яа-яЁёӢӣӮӯҚқҒғҲҳҶҷ]', parts[-1])):
             parts.pop()
-        # Reject mostly one-letter OCR noise.
         if not _looks_like_noise(' '.join(parts)):
             name = ' '.join(parts[:4]).strip()
             if name:
@@ -176,22 +168,18 @@ def _postprocess_fields(parsed_data, ocr_results):
         else:
             parsed_data['name_and_surname'] = _field_template('name_and_surname', '', 0.0)
 
-    # Normalize common PRS/MIA abbreviation. Reject random handwritten noise.
     prs = parsed_data.get('prs_mia_rt', {}).get('value', '')
     if (('хшб' in raw_l) or ('вкд' in raw_l)) and (not prs or 'вкд' not in prs.lower() or 'хшб' not in prs.lower()):
         parsed_data['prs_mia_rt'] = _field_template('prs_mia_rt', 'ХШБ ВКД ҶТ', 0.82)
     elif prs and not re.search(r'(хшб|вкд|ҷт|чт)', prs, flags=re.I):
         parsed_data['prs_mia_rt'] = _field_template('prs_mia_rt', '', 0.0)
 
-    # Dates: if registration date was accidentally copied from valid_until, clear it
-    # unless a structured ROI/position parser produced it.
     reg_date = parsed_data.get('date_of_registration', {}).get('value', '')
     valid_until = parsed_data.get('valid_until', {}).get('value', '')
     reg_src = parsed_data.get('date_of_registration', {}).get('source')
     if reg_date and valid_until and reg_date == valid_until and reg_src not in {'roi', 'position_date', 'postprocess'}:
         parsed_data['date_of_registration'] = _field_template('date_of_registration', '', 0.0)
 
-    # Prefer a different date before valid_until as date_of_registration when present in raw OCR.
     all_dates = []
     for block in ocr_results or []:
         d = _norm_date(str(block.get('text', '')))
@@ -209,20 +197,17 @@ def _postprocess_fields(parsed_data, ocr_results):
         if earlier and (not parsed_data.get('date_of_registration', {}).get('value') or parsed_data['date_of_registration']['value'] == valid_until):
             parsed_data['date_of_registration'] = _field_template('date_of_registration', earlier[0], 0.84)
     if not parsed_data.get('date_of_registration_extension', {}).get('value'):
-        # Bottom extension date is often the same as initial registration date.
         if parsed_data.get('date_of_registration', {}).get('value'):
             parsed_data['date_of_registration_extension'] = _field_template(
                 'date_of_registration_extension', parsed_data['date_of_registration']['value'], 0.72
             )
 
-    # Registration card number: must not be a date, year fragment, passport suffix, or serial.
     dates = [parsed_data.get('date_of_registration', {}).get('value', ''), parsed_data.get('valid_until', {}).get('value', '')]
     passport = parsed_data.get('passport_number', {}).get('value', '')
     reg = parsed_data.get('registration_card_number', {}).get('value', '')
     if reg and (_looks_like_year_or_date_digits(reg, dates) or (passport and _date_digits(reg) in _date_digits(passport))):
         parsed_data['registration_card_number'] = _field_template('registration_card_number', '', 0.0)
 
-    # Search raw OCR for a better 6-8 digit top/card number, excluding dates and passport digits.
     if not parsed_data.get('registration_card_number', {}).get('value'):
         candidates = []
         for block in ocr_results or []:
@@ -234,15 +219,12 @@ def _postprocess_fields(parsed_data, ocr_results):
                 if passport and val in _date_digits(passport):
                     continue
                 x, y = _bbox_center(block)
-                # Top half is more likely to be the red registration card number.
                 score = float(block.get('confidence', 0.5)) + (0.25 if y < 1400 else 0.0) + (0.15 if len(val) == 7 else 0.0)
                 candidates.append((score, val))
         if candidates:
             candidates.sort(reverse=True)
             parsed_data['registration_card_number'] = _field_template('registration_card_number', candidates[0][1], 0.84)
 
-    # Serial/control number: reject passport suffixes and date fragments, then choose a 3-5 digit
-    # candidate around the valid-until/serial row when possible.
     serial = parsed_data.get('serial_control_number', {}).get('value', '')
     reg = parsed_data.get('registration_card_number', {}).get('value', '')
     if serial and (
@@ -275,7 +257,6 @@ def _postprocess_fields(parsed_data, ocr_results):
             candidates.sort(reverse=True)
             parsed_data['serial_control_number'] = _field_template('serial_control_number', candidates[0][1], 0.84)
 
-    # Place of residence: prefer explicit city pattern from OCR over random fallback words.
     place = parsed_data.get('place_of_residence', {}).get('value', '')
     city_match = re.search(r'(ш\.?\s*[А-Яа-яЁёӢӣӮӯҚқҒғҲҳҶҷ]{3,20})', raw)
     if city_match:
@@ -283,12 +264,10 @@ def _postprocess_fields(parsed_data, ocr_results):
     elif place and not re.search(r'(ш\.?|ноҳия|нохия|ҷамоат|чамоат|к\.?|куча|вил\.?|вилоят)', place, flags=re.I):
         parsed_data['place_of_residence'] = _field_template('place_of_residence', '', 0.0)
 
-    # Continued residence line should not contain inspector/date/noise. Keep it empty when uncertain.
     cont = parsed_data.get('place_of_residence_cont', {}).get('value', '')
     if cont and (re.search(r'(Момализода|Имомализода|Одиназода|нозир|тамдид|\d{2}\.\d{2}\.\d{4})', cont, flags=re.I) or len(cont) > 35):
         parsed_data['place_of_residence_cont'] = _field_template('place_of_residence_cont', '', 0.0)
 
-    # Inspector: prefer a clean full surname from raw OCR instead of partial fallback.
     inspector_match = re.search(r'(Одиназода\s*[A-ZА-ЯЁӢӮҚҒҲҶХ]\.?|Имомализода\s*[A-ZА-ЯЁӢӮҚҒҲҶХ]\.?)', raw, flags=re.I)
     if inspector_match:
         value = inspector_match.group(1).replace('X', 'Х').strip()
@@ -335,26 +314,22 @@ def extract():
     if not allowed_file(file.filename):
         return jsonify({'error': f'File type not allowed. Allowed: {Config.ALLOWED_EXTENSIONS}'}), 400
 
-    # Check file size
     file.seek(0, os.SEEK_END)
     size = file.tell()
     file.seek(0)
     if size > Config.MAX_FILE_SIZE:
         return jsonify({'error': f'File too large. Max: {Config.MAX_FILE_SIZE / 1024 / 1024:.0f} MB'}), 400
 
-    # Save uploaded file
     ext = file.filename.rsplit('.', 1)[1].lower()
     unique_name = f'{uuid.uuid4().hex}.{ext}'
     file_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_name)
     file.save(file_path)
 
     try:
-        # Validate image
         is_valid, validation_msg = validate_image(file_path)
         if not is_valid:
             return jsonify({'error': validation_msg}), 400
 
-        # Preprocess image (returns list of images for multi-pass OCR)
         logger.info(f'Processing image: {file_path}')
         processed_images = preprocess_image(
             file_path,
@@ -362,7 +337,6 @@ def extract():
             fast_mode=Config.OCR_FAST_MODE,
         )
 
-        # Run OCR on every preprocessed variant; merge parse results + merged OCR pass
         per_pass_ocr = []
         per_pass_parsed = []
         for img in processed_images:
@@ -376,21 +350,17 @@ def extract():
             if _is_valid_field(v)
         }
 
-        # Fill gaps using OCR merged across all variants (higher recall)
         merged_ocr = merge_ocr_blocks(per_pass_ocr)
         parsed_merged = text_parser.parse(merged_ocr) or {}
         for key, data in parsed_merged.items():
             _put_best_field(best_fields, key, data)
 
-        # ROI parser: fixed-layout field crops + regex validation for IDs/dates.
-        # This is especially important for phone photos and low-quality screenshots.
         roi_fields, roi_ocr, roi_debug = extract_roi_fields(processed_images, ocr_handler, merged_ocr)
         for key, data in (roi_fields or {}).items():
             _put_best_field(best_fields, key, data)
 
         ocr_results = merge_ocr_blocks([merged_ocr, roi_ocr])
 
-        # Build merged parsed data with empty fields for missing keys
         parsed_data = {}
         for field_num, field_info in Config.FIELDS.items():
             key = field_info['key']
@@ -410,7 +380,6 @@ def extract():
         fields_total = len(Config.FIELDS)
         completeness = round(fields_extracted / fields_total, 3) if fields_total else 0.0
 
-        # Build response
         fields = {}
         for key, data in parsed_data.items():
             fields[key] = {
@@ -443,7 +412,6 @@ def extract():
         return jsonify({'error': f'Processing failed: {str(e)}'}), 500
 
     finally:
-        # Clean up uploaded file
         try:
             if os.path.exists(file_path):
                 os.remove(file_path)
@@ -453,4 +421,4 @@ def extract():
 
 if __name__ == '__main__':
     logger.info('Starting Registration Card Scanner on port %s', Config.PORT)
-    app.run(host=Config.HOST, port=Config.DEBUG)
+    app.run(host=Config.HOST, port=Config.PORT, debug=Config.DEBUG)
