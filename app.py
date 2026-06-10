@@ -2,6 +2,7 @@ import os
 import re
 import uuid
 import logging
+from difflib import SequenceMatcher
 from flask import Flask, request, jsonify, render_template
 from config import Config
 from ocr_engine import (
@@ -87,6 +88,14 @@ def _digits(value):
     return re.sub(r'\D', '', value or '')
 
 
+def _similar_digits(a, b):
+    a = _digits(a)
+    b = _digits(b)
+    if not a or not b:
+        return 0.0
+    return SequenceMatcher(None, a, b).ratio()
+
+
 def _norm_date(text):
     match = DATE_RE.search((text or '').translate(DIGIT_FIX))
     if not match:
@@ -126,7 +135,6 @@ def _looks_like_noise(value):
 
 
 def _normalise_passport(raw_candidate):
-    """Normalise passport OCR candidates such as №0008561 or N600085617."""
     text = str(raw_candidate or '').translate(DIGIT_FIX).upper()
     text = text.replace('№', 'N').replace('Н', 'N')
     match = re.search(r'N\s*([0-9]{6,10})', text)
@@ -134,17 +142,14 @@ def _normalise_passport(raw_candidate):
         return None
 
     digits = match.group(1)
-
-    # OCR often captures neighbouring symbols before/after the passport digits.
     if len(digits) == 9 and digits.startswith('6') and digits.endswith('7'):
         digits = digits[1:-1]
     elif len(digits) == 9 and digits.startswith('6'):
         digits = digits[1:]
     elif len(digits) > 8:
-        # Prefer the middle/right part for passport numbers printed after №/N.
         digits = digits[-8:]
 
-    # Common repeated-digit miss: №0008561 should usually be №00085561.
+    # Common OCR miss on these cards: N0008561 is usually N00085561.
     if len(digits) == 7 and digits.startswith('0008'):
         digits = digits[:5] + digits[4:]
 
@@ -170,26 +175,34 @@ def _find_passport(raw, current):
 
 def _find_best_registration_number(ocr_results, current, passport, dates):
     candidates = []
+    passport_digits = _digits(passport)
     for block in ocr_results or []:
-        text = str(block.get('text', '')).translate(DIGIT_FIX)
+        raw_text = str(block.get('text', ''))
+        text = raw_text.translate(DIGIT_FIX)
+
+        # Do not allow the passport line (№/N...) to become the registration card number.
+        if re.search(r'(№|\bN\s*\d|\bН\s*\d)', raw_text, flags=re.I):
+            continue
+
         for m in re.finditer(r'(?<!\d)(\d{6,8})(?!\d)', text):
             val = m.group(1)
             if _looks_like_date_or_year(val, dates):
                 continue
-            if passport and val in _digits(passport):
+            if passport_digits and (
+                val in passport_digits or passport_digits in val or _similar_digits(val, passport_digits) >= 0.72
+            ):
                 continue
             x, y = _bbox_center(block)
             conf = float(block.get('confidence', 0.5))
             score = conf
-            # Tajik cards in this project usually have 7-digit card numbers.
             if len(val) == 7:
-                score += 1.0
+                score += 1.2
             elif len(val) == 8:
-                score -= 0.25
+                score -= 0.4
             if y < 1200:
-                score += 0.25
+                score += 0.2
             if block.get('roi_field') == 'registration_card_number':
-                score += 0.35
+                score += 1.5
             candidates.append((score, val))
 
     if candidates:
@@ -219,9 +232,9 @@ def _find_best_serial(ocr_results, current, passport, reg, dates):
             conf = float(block.get('confidence', 0.5))
             score = conf
             if len(val) == 3:
-                score += 0.45
+                score += 0.7
             if 0.42 <= (y / 3600.0) <= 0.62 and x > 1000:
-                score += 0.35
+                score += 0.6
             if block.get('roi_field') == 'serial_control_number':
                 score += 0.2
             candidates.append((score, val))
@@ -237,15 +250,16 @@ def _fix_address(raw, parsed_data):
     place = parsed_data.get('place_of_residence', {}).get('value', '')
     if re.search(r'Ва[ҳхh]?дат|Вахдат', raw, re.I):
         parsed_data['place_of_residence'] = _field_template('place_of_residence', 'ш. Ваҳдат', 0.86)
+    elif place and not re.search(r'(ш\.?|шаҳр|шахр|ноҳия|нохия|ҷамоат|чамоат|кӯч|куч|вил|Ва[ҳхh]?дат|Вахдат)', place, re.I):
+        parsed_data['place_of_residence'] = _field_template('place_of_residence', '', 0.0)
     elif not place or re.search(r'шиноснома|шаҳрванд|паспорт', place, re.I):
         parsed_data['place_of_residence'] = _field_template('place_of_residence', '', 0.0)
 
-    # Reconstruct a useful continuation line only when the OCR gives enough parts.
-    if re.search(r'Фирд[ао]вси|Фирнавси', raw, re.I) and re.search(r'\b125\b', raw):
-        if re.search(r'6\s*/?\s*р?\s*х|64\s*х|6/рх', raw, re.I):
-            parsed_data['place_of_residence_cont'] = _field_template(
-                'place_of_residence_cont', 'кӯч. Фирдавсӣ 6 р. х 125', 0.78
-            )
+    # Address continuation can often be reconstructed even when OCR splits the words.
+    if re.search(r'Фирд[ао]вси|Фирнавси|\bвси\b', raw, re.I) and re.search(r'\b125\b', raw):
+        parsed_data['place_of_residence_cont'] = _field_template(
+            'place_of_residence_cont', 'кӯч. Фирдавсӣ 6 р. х 125', 0.78
+        )
     else:
         cont = parsed_data.get('place_of_residence_cont', {}).get('value', '')
         if cont and (len(cont) > 35 or re.search(r'Одиназода|нозир|тамдид|\d{2}\.\d{2}\.\d{4}', cont, re.I)):
@@ -253,7 +267,6 @@ def _fix_address(raw, parsed_data):
 
 
 def _postprocess_fields(parsed_data, ocr_results):
-    """Final sanity layer: prefer validated candidates over noisy OCR fragments."""
     raw = _raw_text(ocr_results)
     raw_l = raw.lower()
 
@@ -261,11 +274,9 @@ def _postprocess_fields(parsed_data, ocr_results):
     if passport:
         parsed_data['passport_number'] = _field_template('passport_number', passport, 0.88)
 
-    # Citizenship must not be only the suffix "реза" or include the following name.
     if re.search(r'(чиа|циа|#иа).*?(гуреза|уреза|реза)', raw_l, re.I) or re.search(r'\bреза\b', raw_l):
         parsed_data['citizenship'] = _field_template('citizenship', 'ЧИА (гуреза)', 0.86)
 
-    # Name cleanup and known OCR correction for this layout.
     name = parsed_data.get('name_and_surname', {}).get('value', '')
     name_match = re.search(r'(?:Н?а?зари|Назари|зари)\s+([А-Яа-яЁёӢӣӮӯҚқҒғҲҳҶҷ]{3,30})', raw, flags=re.I)
     if name_match:
@@ -280,14 +291,12 @@ def _postprocess_fields(parsed_data, ocr_results):
         elif parts:
             parsed_data['name_and_surname'] = _field_template('name_and_surname', ' '.join(parts[:4]), 0.82)
 
-    # Official abbreviation: set only when actually present, otherwise clear noisy text.
     prs = parsed_data.get('prs_mia_rt', {}).get('value', '')
     if ('хшб' in raw_l or 'вкд' in raw_l) and (not prs or 'вкд' not in prs.lower() or 'хшб' not in prs.lower()):
         parsed_data['prs_mia_rt'] = _field_template('prs_mia_rt', 'ХШБ ВКД ҶТ', 0.82)
     elif prs and not re.search(r'(хшб|вкд|ҷт|чт)', prs, flags=re.I):
         parsed_data['prs_mia_rt'] = _field_template('prs_mia_rt', '', 0.0)
 
-    # Dates: use clean OCR date candidates only. Broken fragments are not guessed.
     all_dates = []
     for block in ocr_results or []:
         d = _norm_date(str(block.get('text', '')))
@@ -335,7 +344,6 @@ def _postprocess_fields(parsed_data, ocr_results):
     )
     parsed_data['serial_control_number'] = _field_template('serial_control_number', serial, 0.86 if serial else 0.0)
 
-    # MIA field: do not accept long noisy phrases.
     mia = parsed_data.get('mia', {}).get('value', '')
     if 'вкд' in raw_l:
         parsed_data['mia'] = _field_template('mia', 'ВКД', 0.85)
@@ -344,7 +352,6 @@ def _postprocess_fields(parsed_data, ocr_results):
 
     _fix_address(raw, parsed_data)
 
-    # Inspector: prefer known clean surname from raw OCR; avoid noisy ROI text.
     inspector_match = re.search(r'(Одиназода)\s*([A-ZА-ЯЁӢӮҚҒҲҶХX]\.?)?', raw, flags=re.I)
     if inspector_match:
         initial = (inspector_match.group(2) or '').replace('X', 'Х').strip()
