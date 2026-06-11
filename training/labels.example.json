@@ -1,0 +1,41 @@
+{
+  "_instructions": "Copy this file to training/labels.local.json and edit it. For each card photo you put in training/images/, add one entry to 'samples'. Type the CORRECT value exactly as printed on the card. If a field is genuinely blank on that card, use an empty string \"\". labels.local.json is git-ignored, so your real data stays off GitHub.",
+  "samples": [
+    {
+      "image": "training/images/card_001.png",
+      "fields": {
+        "registration_card_number": "1288203",
+        "passport_number": "P06476028",
+        "citizenship": "Афғонистон",
+        "name_and_surname": "Мина Фарман",
+        "date_of_registration": "17.03.2026",
+        "prs_mia_rt": "ХШБ ВКД ҶТ",
+        "valid_until": "02.06.2026",
+        "serial_control_number": "1400",
+        "mia": "ВКД",
+        "place_of_residence": "ш. Вахдат",
+        "place_of_residence_cont": "",
+        "inspector": "Момализода Ф",
+        "date_of_registration_extension": "17.03.2026"
+      }
+    },
+    {
+      "image": "training/images/card_002.png",
+      "fields": {
+        "registration_card_number": "",
+        "passport_number": "",
+        "citizenship": "",
+        "name_and_surname": "",
+        "date_of_registration": "",
+        "prs_mia_rt": "",
+        "valid_until": "",
+        "serial_control_number": "",
+        "mia": "",
+        "place_of_residence": "",
+        "place_of_residence_cont": "",
+        "inspector": "",
+        "date_of_registration_extension": ""
+      }
+    }
+  ]
+}

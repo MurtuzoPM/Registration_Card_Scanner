@@ -33,6 +33,19 @@ def _is_valid_field(data):
     return isinstance(data, dict) and "value" in data
 
 
+def _image_size(img):
+    """Return [width, height] of a processed image (numpy array or PIL)."""
+    try:
+        h, w = img.shape[:2]            # numpy / OpenCV array (H, W, ...)
+        return [int(w), int(h)]
+    except Exception:
+        try:
+            w, h = img.size             # PIL Image
+            return [int(w), int(h)]
+        except Exception:
+            return None
+
+
 def parse_image(image_path: Path, fast_mode: bool):
     ok, msg = validate_image(str(image_path))
     if not ok:
@@ -106,6 +119,7 @@ def parse_image(image_path: Path, fast_mode: bool):
     return {
         "image": str(image_path),
         "fast_mode": fast_mode,
+        "image_size": _image_size(processed_images[0]) if processed_images else None,
         "fields": fields,
         "roi_debug": roi_debug,
         "raw_ocr": [
