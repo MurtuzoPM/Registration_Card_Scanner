@@ -27,24 +27,33 @@ def _extract_card_number(blocks, w, h):
     from .id_extractor import extract_registration_card_number
     return extract_registration_card_number(blocks, w, h)
 
-# --- Citizenship: anchor on ШАХРВАНДИ / find НИА/ЧИА(гуреза) or known country ---
+# --- Citizenship: prefer a KNOWN country (lexicon); never force one ---
+_COUNTRIES = ["Хитой", "Руссия", "Россия", "Афғонистон", "Узбекистон",
+              "Ӯзбекистон", "Қирғизистон", "Покистон", "Эрон", "Туркия"]
+
+
 def _extract_citizenship(blocks, w, h):
-    # Direct: any block containing гуреза/гpеза/НИА/ЧИА
-    cands=[]
+    cands = []
     for b in blocks:
-        t=b["text"].strip(" .:;,-()_")
-        low=t.lower()
-        yr=_rel_y(b["bbox"],h)
-        if not (20<=yr<=45): continue
-        if "гуреза" in low or "греза" in low or "гореза" in low:
-            cands.append((b["confidence"], "Хитой"))
-        elif re.search(r"\b(чиа|ниа|нии|cиа|сиа)\b", low):
-            cands.append((b["confidence"], "Хитой"))
-        elif any(c.lower() in low or _fuzzy(low,c,0.75) for c in ["Хитой","Руссия","Россия","Афғонистон","Узбекистон","Ӯзбекистон"]):
-            cands.append((b["confidence"],t))
-    if not cands: return None
+        t = b["text"].strip(" .:;,-()_")
+        low = t.lower()
+        yr = _rel_y(b["bbox"], h)
+        if not (20 <= yr <= 45):
+            continue
+        matched = None
+        for c in _COUNTRIES:
+            if c.lower() in low or _fuzzy(low, c, 0.78):
+                matched = c
+                break
+        if matched:
+            cands.append((b["confidence"] + 0.2, matched))
+        elif re.search(r"[\u0400-\u04FF]{4,}", t) and not any(ch.isdigit() for ch in t):
+            # Unknown citizenship: keep the OCR'd word so it is not lost.
+            cands.append((b["confidence"], t))
+    if not cands:
+        return None
     cands.sort(reverse=True)
-    return (cands[0][1], max(cands[0][0],0.65))
+    return (cands[0][1], max(cands[0][0], 0.6))
 
 # --- Name: 2-word capitalized Cyrillic in mid-upper region ---
 def _is_personal_name(text):

@@ -25,10 +25,12 @@ from ocr_engine import (  # noqa: E402
     merge_parsed_fields,
     preprocess_image,
     validate_image,
+    postprocess_fields,
 )
 
-# Reuse the final sanity layer from the Flask app so debug results match /api/extract.
-from app import _is_valid_field, _postprocess_fields  # noqa: E402
+
+def _is_valid_field(data):
+    return isinstance(data, dict) and "value" in data
 
 
 def parse_image(image_path: Path, fast_mode: bool):
@@ -89,7 +91,7 @@ def parse_image(image_path: Path, fast_mode: bool):
                 "field_number": field_num,
             }
 
-    parsed_data = _postprocess_fields(parsed_data, all_ocr)
+    parsed_data = postprocess_fields(parsed_data, all_ocr)
 
     fields = {}
     for key, data in parsed_data.items():

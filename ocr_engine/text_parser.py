@@ -347,21 +347,16 @@ def _normalize_mia_value(text):
 
 
 def _normalize_citizenship(text):
+    """Normalise spelling and map to a KNOWN country via the lexicon only.
+
+    Card-agnostic: this never forces a specific country. It fixes obvious
+    spelling/OCR noise and, if the cleaned text fuzzy-matches a country in the
+    lexicon, returns the canonical country name; otherwise it returns the
+    cleaned text unchanged so unseen citizenships are preserved.
+    """
     value = normalize_text(text.strip(' .:;,-()'))
-    lower = value.lower()
-    if 'греза' in lower or 'гуреза' in lower or re.search(r'\b(ниа|чиа)\b', lower):
-        return 'Хитой'
-    known = {
-        'хиоц': 'Хитой', 'хиюош': 'Хитой', 'хиюц': 'Хитой', 'хигой': 'Хитой',
-        'хитои': 'Хитой', 'хитой': 'Хитой', 'хитоц': 'Хитой', 'хито': 'Хитой',
-        'руссия': 'Руссия', 'россия': 'Россия',
-        'узбекистон': 'Узбекистон', 'узбекистан': 'Узбекистон',
-        'афгонистон': 'Афғонистон', 'афганистон': 'Афғонистон',
-        'ниа (гуреза': 'Хитой', 'чиа (гуреза': 'Хитой', 'ниа(гуреза': 'Хитой',
-        'ниа (греза': 'Хитой', 'чиа (греза': 'Хитой',
-    }
-    if lower in known:
-        return known[lower]
+    if not value:
+        return ''
     matched = fuzzy_match_lexicon(value, get_field_values('countries'))
     return matched if matched else value
 
