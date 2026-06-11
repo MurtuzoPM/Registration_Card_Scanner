@@ -83,7 +83,7 @@ def test_card_b_is_different_from_card_a():
     parsed["place_of_residence"] = _field("ш. Хуҷанд")
 
     ocr = [
-        _block("№0011801", 900),
+        _block("N0011801", 900),
         _block("1288203", 700),
         _block("Хуҷанд", 2400),
         _block("15.02.2024", 1700),
@@ -95,7 +95,7 @@ def test_card_b_is_different_from_card_a():
     assert out["citizenship"]["value"] == "Афғонистон"
     assert out["inspector"]["value"] == "Назаров И"
     assert out["place_of_residence"]["value"] == "ш. Хуҷанд"
-    assert out["passport_number"]["value"] == "№0011801"
+    assert out["passport_number"]["value"] == "N0011801"
     assert out["registration_card_number"]["value"] == "1288203"
 
     blob = " ".join(f["value"] for f in out.values())
@@ -107,7 +107,7 @@ def test_passport_n000_not_mutated():
     """The old code rewrote N0008561 -> N00085561. That hack must be gone."""
     parsed = _empty_parsed()
     out = postprocess_fields(parsed, [_block("N0008561", 900)])
-    assert out["passport_number"]["value"] == "№0008561"
+    assert out["passport_number"]["value"] == "N0008561"
 
 
 def test_unknown_citizenship_is_preserved_not_forced():
