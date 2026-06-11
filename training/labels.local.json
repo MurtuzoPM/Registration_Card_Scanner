@@ -1,0 +1,57 @@
+{
+  "samples": [
+    {
+      "image": "training/images/card_001.png",
+      "fields": {
+        "registration_card_number": "1234442",
+        "passport_number": "N00085561",
+        "citizenship": "ЧИА (гуреза)",
+        "name_and_surname": "Назарӣ Салмо",
+        "date_of_registration": "25.12.2025",
+        "prs_mia_rt": "ХШБ ВКД ҶТ",
+        "valid_until": "25.12.2026",
+        "serial_control_number": "740",
+        "place_of_residence": "ш. Ваҳдат",
+        "place_of_residence_cont": "кӯч. Фирдавсӣ б/р х 125",
+        "inspector": "Одиназода Х.",
+        "date_of_registration_extension": "25.12.2025"
+      }
+    },
+
+    {
+      "image": "training/images/card_004.png",
+      "fields": {
+        "registration_card_number": "1233509",
+        "passport_number": "N0011801",
+        "citizenship": "ЧИА (гуреза)",
+        "name_and_surname": "Сарвари Камила",
+        "date_of_registration": "23.02.2026",
+        "prs_mia_rt": "ХШБ ВКД ҶТ",
+        "valid_until": "03.03.27",
+        "serial_control_number": "123",
+        "place_of_residence": "ш. Ваҳдат",
+        "place_of_residence_cont": "кӯч. Сомониён 16 хуч 49",
+        "inspector": "Рачабзода К.У.",
+        "date_of_registration_extension": "23.02.2026"
+      }
+    },
+
+    {
+      "image": "training/images/card_005.png",
+      "fields": {
+        "registration_card_number": "1289291",
+        "passport_number": "P05661035",
+        "citizenship": "Афғонистон",
+        "name_and_surname": "Ахмади Ак Мухаммад",
+        "date_of_registration": "08.04.2026",
+        "prs_mia_rt": "ХШБ ВКД ҶТ",
+        "valid_until": "16.06.2026",
+        "serial_control_number": "3128",
+        "place_of_residence": "ш. Душанбе",
+        "place_of_residence_cont": "к. Чилмехроб х. 198",
+        "inspector": "Имомализода Ф",
+        "date_of_registration_extension": "08.04.2026"
+      }
+    }
+  ]
+}
