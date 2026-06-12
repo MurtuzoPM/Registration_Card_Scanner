@@ -144,7 +144,8 @@ def _normalise_passport(raw_candidate):
         prefix = m.group(1).translate(str.maketrans('АВЕКМНОРСТХ', 'ABEKMHOPCTX'))
         return prefix + m.group(2)
 
-    # Form 2: №/N + digits (internal passport).
+    # Form 2: №/N + digits (internal passport). The leading "№" is written as
+    # "N" to match the convention used on these cards (e.g. N00085561).
     norm = text.translate(DIGIT_FIX).upper().replace('№', 'N').replace('Н', 'N').replace('H', 'N')
     m = re.search(r'N\s*([0-9]{6,9})', norm)
     if m:
@@ -152,7 +153,7 @@ def _normalise_passport(raw_candidate):
         if len(digits) > 8:
             digits = digits[-8:]
         if 6 <= len(digits) <= 8:
-            return '№' + digits
+            return 'N' + digits
     return None
 
 
