@@ -37,6 +37,7 @@ from config import Config  # noqa: E402
 from ocr_engine import (  # noqa: E402
     OCRHandler,
     TextParser,
+    create_ocr_handler,
     extract_roi_fields,
     merge_ocr_blocks,
     merge_parsed_fields,
@@ -171,7 +172,7 @@ def main() -> int:
         fast_mode = False
 
     # Initialize OCR only once for the whole dataset. This is much faster on CPU.
-    ocr_handler = OCRHandler(languages=Config.OCR_LANGUAGES, fast_mode=fast_mode if fast_mode is not None else Config.OCR_FAST_MODE)
+    ocr_handler = create_ocr_handler(languages=Config.OCR_LANGUAGES, fast_mode=fast_mode if fast_mode is not None else Config.OCR_FAST_MODE)
     text_parser = TextParser()
 
     report = {"samples": [], "summary": {}}
