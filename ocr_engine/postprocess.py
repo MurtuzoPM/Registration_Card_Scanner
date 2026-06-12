@@ -120,8 +120,12 @@ def _normalise_passport(raw_candidate: str) -> Optional[str]:
         # N/H/Н is often OCR for the № sign, not a true booklet prefix.
         if prefix not in {'N', 'H'}:
             return prefix + match.group(2)
-
+ 
+    stronger-ocr-engine
     # Internal passport line: № or OCR variants N/H/Н + digits.
+    # Form 2: №/N + digits (internal passport). The leading "№" is written as
+    # "N" to match the convention used on these cards (e.g. N00085561).
+    master
     norm = text.translate(DIGIT_FIX).upper().replace('№', 'N').replace('Н', 'N').replace('H', 'N')
     match = re.search(r'N\s*([0-9]{6,9})', norm)
     if match:
@@ -129,7 +133,7 @@ def _normalise_passport(raw_candidate: str) -> Optional[str]:
         if len(digits) > 8:
             digits = digits[-8:]
         if 6 <= len(digits) <= 8:
-            return '№' + digits
+            return 'N' + digits
     return None
 
 

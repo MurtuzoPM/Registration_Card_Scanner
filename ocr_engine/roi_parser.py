@@ -6,7 +6,9 @@ expected field zones, validates candidates by field type, and returns normal
 field dictionaries that can be merged with the existing TextParser output.
 """
 
+import json
 import logging
+import os
 import re
 from typing import Dict, Iterable, List, Optional, Tuple
 
@@ -41,6 +43,31 @@ FIELD_ROIS: Dict[str, List[ROI]] = {
 
 FIELD_NUMBERS = {info['key']: num for num, info in Config.FIELDS.items()}
 FIELD_LABELS = {info['key']: info['label'] for info in Config.FIELDS.values()}
+
+
+def _apply_calibrated_template(rois: Dict[str, List[ROI]]) -> Dict[str, List[ROI]]:
+    """Override the default ROIs with a calibrated template, if one exists.
+
+    The template (``data/card_template.json``) is produced by
+    ``tools/calibrate_template.py`` from labelled debug reports. Each entry is a
+    single ``[x1, y1, x2, y2]`` relative box. When the file is absent we fall
+    back to the hand-tuned ``FIELD_ROIS`` below.
+    """
+    path = os.path.join(os.path.dirname(__file__), 'data', 'card_template.json')
+    try:
+        with open(path, 'r', encoding='utf-8') as handle:
+            template = json.load(handle)
+    except (OSError, ValueError):
+        return rois
+    merged = {key: list(value) for key, value in rois.items()}
+    for key, box in template.items():
+        if isinstance(box, (list, tuple)) and len(box) == 4:
+            merged[key] = [tuple(float(c) for c in box)]
+    logger.info('Loaded calibrated ROI template with %d fields', len(template))
+    return merged
+
+
+FIELD_ROIS = _apply_calibrated_template(FIELD_ROIS)
 
 DATE_RE = re.compile(r'(?<!\d)(\d{1,2})[./,\-\s]+(\d{1,2})[./,\-\s]+(\d{2,4})(?!\d)')
 PASSPORT_RE = re.compile(r'\b([A-ZА-ЯЁ]{1,3})\s*([A-ZА-ЯЁСC])?\s*(\d[\dOОoоIІlL|BЗЗS]{5,8})\b', re.I)

@@ -1,0 +1,5678 @@
+{
+  "image": "/home/student/Desktop/PassportApp/registration-card/training/images/card_001.png",
+  "fast_mode": false,
+  "image_size": [
+    2560,
+    3720
+  ],
+  "fields": {
+    "registration_card_number": {
+      "value": "13344423",
+      "confidence": 0.86,
+      "label": "Registration Card Number",
+      "field_number": 1,
+      "source": "postprocess"
+    },
+    "passport_number": {
+      "value": "№0008561",
+      "confidence": 0.86,
+      "label": "Passport Number",
+      "field_number": 2,
+      "source": "postprocess"
+    },
+    "citizenship": {
+      "value": "реза",
+      "confidence": 0.99,
+      "label": "Citizenship",
+      "field_number": 3,
+      "source": "postprocess"
+    },
+    "name_and_surname": {
+      "value": "Назари Салмо",
+      "confidence": 0.82,
+      "label": "Name and Surname",
+      "field_number": 4,
+      "source": "postprocess"
+    },
+    "date_of_registration": {
+      "value": "",
+      "confidence": 0.0,
+      "label": "Date of Registration",
+      "field_number": 5,
+      "source": null
+    },
+    "prs_mia_rt": {
+      "value": "",
+      "confidence": 0.0,
+      "label": "PRS MIA RT",
+      "field_number": 6,
+      "source": "postprocess"
+    },
+    "valid_until": {
+      "value": "",
+      "confidence": 0.0,
+      "label": "Valid Until",
+      "field_number": 7,
+      "source": null
+    },
+    "serial_control_number": {
+      "value": "740",
+      "confidence": 0.84,
+      "label": "Serial/Control Number",
+      "field_number": 8,
+      "source": "postprocess"
+    },
+    "mia": {
+      "value": "",
+      "confidence": 0.0,
+      "label": "MIA (Ministry of Internal Affairs)",
+      "field_number": 9,
+      "source": "postprocess"
+    },
+    "place_of_residence": {
+      "value": "",
+      "confidence": 0.0,
+      "label": "Place of Residence",
+      "field_number": 10,
+      "source": "postprocess"
+    },
+    "place_of_residence_cont": {
+      "value": "",
+      "confidence": 0.0,
+      "label": "Place of Residence (continued)",
+      "field_number": 11,
+      "source": "postprocess"
+    },
+    "inspector": {
+      "value": "ШУИ БАРА ИИ",
+      "confidence": 0.8,
+      "label": "Inspector",
+      "field_number": 12,
+      "source": "postprocess"
+    },
+    "date_of_registration_extension": {
+      "value": "",
+      "confidence": 0.0,
+      "label": "Date of Registration/Extension",
+      "field_number": 13,
+      "source": null
+    }
+  },
+  "roi_debug": {
+    "roi_candidates": {
+      "registration_card_number": [
+        {
+          "raw": "РУ. 3в , 0 ау4\" ; |1 КОРУ 7 РР иг: 82831 ай кат т. 5 му мА. Ӯ 6 Б КАЙ 2",
+          "selected": null,
+          "confidence": 0.566,
+          "image_index": 0,
+          "roi_index": 0
+        },
+        {
+          "raw": "27, фот ГА зас#x с т^ ами М. Ӯ АЦИМ Я D ; 6 8 УТ ЛИ 31 р a' 17 о5 Чит",
+          "selected": null,
+          "confidence": 0.582,
+          "image_index": 0,
+          "roi_index": 1
+        },
+        {
+          "raw": "идохи истон он Ӯ а 2-6 i¢ 13344423 НЕ 2.",
+          "selected": "13344423",
+          "confidence": 0.611,
+          "image_index": 1,
+          "roi_index": 0
+        },
+        {
+          "raw": "Гоч четон истон 2х 1РЙ 1234442 3х 6",
+          "selected": "1234442",
+          "confidence": 0.475,
+          "image_index": 1,
+          "roi_index": 1
+        },
+        {
+          "raw": "МИР Ба КА ха я г 1 БИ МЕД АЗ 4 ШЕ В Ё ИШО Љ! Ӣ ШИ",
+          "selected": null,
+          "confidence": 0.682,
+          "image_index": 2,
+          "roi_index": 0
+        },
+        {
+          "raw": "МЕД 7 {РЙi ; <Шё!",
+          "selected": null,
+          "confidence": 0.453,
+          "image_index": 2,
+          "roi_index": 1
+        },
+        {
+          "raw": "0 и [1 5 зоош",
+          "selected": null,
+          "confidence": 0.564,
+          "image_index": 3,
+          "roi_index": 0
+        },
+        {
+          "raw": "6/ 2 0",
+          "selected": null,
+          "confidence": 0.321,
+          "image_index": 3,
+          "roi_index": 1
+        }
+      ],
+      "passport_number": [
+        {
+          "raw": "4 N60008561 7; [775 67 Фезa ч",
+          "selected": "N600085617",
+          "confidence": 0.571,
+          "image_index": 0,
+          "roi_index": 0
+        },
+        {
+          "raw": "№0008561 РА ш урсзa",
+          "selected": null,
+          "confidence": 0.738,
+          "image_index": 1,
+          "roi_index": 0
+        },
+        {
+          "raw": "аб; КЕРИ --------- ;]4(]эсеза",
+          "selected": null,
+          "confidence": 0.51,
+          "image_index": 2,
+          "roi_index": 0
+        },
+        {
+          "raw": "№000 рсза ша-",
+          "selected": null,
+          "confidence": 0.705,
+          "image_index": 3,
+          "roi_index": 0
+        }
+      ],
+      "citizenship": [
+        {
+          "raw": "ЧИА(ЕУреза А: Ад; РК г. г? 5 7 34 рт.",
+          "selected": "ЧИА ЕУреза А Ад РК г. г? рт",
+          "confidence": 0.502,
+          "image_index": 0,
+          "roi_index": 0
+        },
+        {
+          "raw": "ЦИА(Гуреза 0 4 зари Салмо 8",
+          "selected": "ЦИА Гуреза зари Салмо",
+          "confidence": 0.555,
+          "image_index": 1,
+          "roi_index": 0
+        },
+        {
+          "raw": "А(Ф утеза теза ОО: C3 ЛА ё Ка зар ў БЕ 1",
+          "selected": "А Ф утеза теза ОО C3 ЛА ё Ка зар ў БЕ",
+          "confidence": 0.562,
+          "image_index": 2,
+          "roi_index": 0
+        },
+        {
+          "raw": "реза",
+          "selected": "реза",
+          "confidence": 0.997,
+          "image_index": 3,
+          "roi_index": 0
+        }
+      ],
+      "name_and_surname": [
+        {
+          "raw": "иё ~тул 3 ё ти ӣ Таш Ъ 2 1 ЗЕР ят 4 ТТ ТД 6 тv ` 25 9 г а",
+          "selected": "иё ~тул ё ти ӣ Таш Ъ ЗЕР ят ТТ ТД тv ` г а",
+          "confidence": 0.63,
+          "image_index": 0,
+          "roi_index": 0
+        },
+        {
+          "raw": "22 Ӣ Вас 24.? Г 25 и Эъ, 1 2",
+          "selected": "Ӣ Вас .? Г и Эъ",
+          "confidence": 0.603,
+          "image_index": 1,
+          "roi_index": 0
+        },
+        {
+          "raw": "7 ШЕР 244134 Н КБ 8 М ДЕР ш ӯ! 2s В аз ч о еды Й РУ и ШИ",
+          "selected": "ШЕР Н КБ М ДЕР ш ӯ! s В аз ч о еды Й РУ и ШИ",
+          "confidence": 0.662,
+          "image_index": 2,
+          "roi_index": 0
+        },
+        {
+          "raw": "7 4",
+          "selected": null,
+          "confidence": 0.327,
+          "image_index": 3,
+          "roi_index": 0
+        }
+      ],
+      "date_of_registration": [
+        {
+          "raw": "3 ттт ер г У 7 a5 4h 40 ыы",
+          "selected": null,
+          "confidence": 0.531,
+          "image_index": 0,
+          "roi_index": 0
+        },
+        {
+          "raw": "02 О 4 БУЗ",
+          "selected": null,
+          "confidence": 0.421,
+          "image_index": 1,
+          "roi_index": 0
+        },
+        {
+          "raw": "таин, В ИИ Й МЕП и КИ АТБ РАБ ИБ ИД 1 4{ be' У ГИР МИБ МИМ",
+          "selected": null,
+          "confidence": 0.625,
+          "image_index": 2,
+          "roi_index": 0
+        },
+        {
+          "raw": "5 ДТ] СД ҷ",
+          "selected": null,
+          "confidence": 0.683,
+          "image_index": 3,
+          "roi_index": 0
+        }
+      ],
+      "prs_mia_rt": [
+        {
+          "raw": "У^ 2633 #е\"хяля: що . 0 Ё т 8 7 КАРДА ШУД там Г #м 5. Ф 4",
+          "selected": "У е хяля що Ё т КАРДА ШУД там Г м Ф",
+          "confidence": 0.53,
+          "image_index": 0,
+          "roi_index": 0
+        },
+        {
+          "raw": "740 5 ~w т. 2 КАРДА ШУД ДА ШУ, РТАмя и АШ, 324 НАЛ",
+          "selected": "w т КАРДА ШУД ДА ШУ РТАмя и АШ НАЛ",
+          "confidence": 0.649,
+          "image_index": 1,
+          "roi_index": 0
+        },
+        {
+          "raw": "ШЕ э : ; 0 МАЯ Ри ЯН у г БМ 5 { 4 Ии 2 АТ; КБ КИ АА 1 О 4, Д П Ќ 44",
+          "selected": "ШЕ э МАЯ Ри ЯН у г БМ Ии АТ КБ КИ АА О Д П",
+          "confidence": 0.645,
+          "image_index": 2,
+          "roi_index": 0
+        },
+        {
+          "raw": "г40= 76 3 тов [РИФТА ШУД} ТАМДИД КАРДА ШУД Риш шаа 9",
+          "selected": "г тов РИФТА ШУД КАРДА ШУД Риш шаа",
+          "confidence": 0.582,
+          "image_index": 3,
+          "roi_index": 0
+        }
+      ],
+      "valid_until": [
+        {
+          "raw": "[йя Амя чи E 1 арз 6 #яj й ; ш см 3 Ч#уаи сuхn",
+          "selected": null,
+          "confidence": 0.378,
+          "image_index": 0,
+          "roi_index": 0
+        },
+        {
+          "raw": "саъи йд ГИРИФ ТАМяИА 4 ГИР Ч Зад 2 ин1 лаби:",
+          "selected": null,
+          "confidence": 0.469,
+          "image_index": 1,
+          "roi_index": 0
+        },
+        {
+          "raw": "сур; ig r,р ГЬҶ и тоз КД а ШБ 3 ЭИ Ӣ [е",
+          "selected": null,
+          "confidence": 0.637,
+          "image_index": 2,
+          "roi_index": 0
+        },
+        {
+          "raw": "ЙД ГИРИФТА ШУД ТАмДИД ЙД ГИРИФТА ШУД ХТАМЛИ ДТ 196 ШУД Х7FЬ ВА шш хиш",
+          "selected": null,
+          "confidence": 0.621,
+          "image_index": 3,
+          "roi_index": 0
+        }
+      ],
+      "serial_control_number": [
+        {
+          "raw": "36 Jk УЖАРДА ШУД шШхд РИ 4 9 а. арра хшx г. Ё",
+          "selected": null,
+          "confidence": 0.377,
+          "image_index": 0,
+          "roi_index": 0
+        },
+        {
+          "raw": "ЧОШ 7 АРДА ШУД 6 ъе a> 9",
+          "selected": null,
+          "confidence": 0.589,
+          "image_index": 1,
+          "roi_index": 0
+        },
+        {
+          "raw": "САРД. ш. и. НИ т: 1 е",
+          "selected": null,
+          "confidence": 0.77,
+          "image_index": 2,
+          "roi_index": 0
+        },
+        {
+          "raw": "Ё ИИДКАРДА 2 1",
+          "selected": null,
+          "confidence": 0.437,
+          "image_index": 3,
+          "roi_index": 0
+        }
+      ],
+      "mia": [
+        {
+          "raw": "цу 5 хай, яв~ ААМ чаҳ <2 7Ъ4 4. 1 8 \"аҶҷ -ӣ",
+          "selected": "цу хай яв ААМ чаҳ Ъ аҶҷ ӣ",
+          "confidence": 0.557,
+          "image_index": 0,
+          "roi_index": 0
+        },
+        {
+          "raw": "њар 2 5 3 м",
+          "selected": "ар м",
+          "confidence": 0.325,
+          "image_index": 1,
+          "roi_index": 0
+        },
+        {
+          "raw": "тт а 3 КИ ЗИ М и 1 БИ РЗ ШЕРИ Ӣ г ез д 1 ; ё 7 БЕ у ч",
+          "selected": "тт а КИ ЗИ М и БИ РЗ ШЕРИ Ӣ г ез д ё БЕ у ч",
+          "confidence": 0.696,
+          "image_index": 2,
+          "roi_index": 0
+        },
+        {
+          "raw": "1 каҷ м г т-Ӣ\"!",
+          "selected": "каҷ м г т Ӣ",
+          "confidence": 0.55,
+          "image_index": 3,
+          "roi_index": 0
+        }
+      ],
+      "place_of_residence": [
+        {
+          "raw": "'7 ёс;: ав5 125 ~Фирнавси 7 ё ь [4 У^ Ќ [емя] { 53 a' ййд во бл",
+          "selected": "' ёс ав5 125 ~Фирнавси ё ь [ У^ Ќ [емя] { a' ййд во бл",
+          "confidence": 0.478,
+          "image_index": 0,
+          "roi_index": 0
+        },
+        {
+          "raw": "52521 125 6/рх Фирдавси 64p вой б РУ?",
+          "selected": "52521 125 /рх Фирдавси 64p вой б РУ?",
+          "confidence": 0.711,
+          "image_index": 1,
+          "roi_index": 0
+        },
+        {
+          "raw": "4 ЁД вси Ӣ 7 МИМ 1 БИ и Й",
+          "selected": "ЁД вси Ӣ МИМ БИ и Й",
+          "confidence": 0.743,
+          "image_index": 2,
+          "roi_index": 0
+        },
+        {
+          "raw": "Фирдавси 64 х 125 0 ш",
+          "selected": "Фирдавси х 125 ш",
+          "confidence": 0.589,
+          "image_index": 3,
+          "roi_index": 0
+        }
+      ],
+      "place_of_residence_cont": [
+        {
+          "raw": "РАЗ Ж: = 0 а; #Яlль иназодэ 5 1 м. ке ар 2 4 а. ањ итн",
+          "selected": "РАЗ Ж = а #Яlль иназодэ м. ке ар а. ањ итн",
+          "confidence": 0.522,
+          "image_index": 0,
+          "roi_index": 0
+        },
+        {
+          "raw": "шондорун шиомчщ АД Ол 4 Одиназода {2 Де a7 те 12 ае 5 21 Эм Ѕ 2% ҶУД БИ Ї",
+          "selected": "шондорун шиомчщ АД Ол Одиназода { Де a7 те ае Эм Ѕ % ҶУД БИ Ї",
+          "confidence": 0.692,
+          "image_index": 1,
+          "roi_index": 0
+        },
+        {
+          "raw": "ВЕН Љ ЭБ Р ХР БЕ 3°. 2 ќ ФА 1 7; МИ аъ",
+          "selected": "ВЕН Љ ЭБ Р ХР БЕ °. ќ ФА МИ аъ",
+          "confidence": 0.628,
+          "image_index": 2,
+          "roi_index": 0
+        },
+        {
+          "raw": "г Њол дол и.",
+          "selected": "г Њол дол и",
+          "confidence": 0.53,
+          "image_index": 3,
+          "roi_index": 0
+        }
+      ],
+      "inspector": [
+        {
+          "raw": "еоa ; 3 ХАЛ То, 1 4 Ма 5 фро РИ 2 ттт ихтаа= # ара #iги та Ф^ 9 7 мер Ё алат ҷ ТУХ б 6 Ӯ, R Еалиiя ,",
+          "selected": "еоa ХАЛ То Ма фро РИ ттт ихтаа= # ара #iги та Ф^ мер Ё алат ҷ ТУХ б Ӯ R Еалиiя",
+          "confidence": 0.535,
+          "image_index": 0,
+          "roi_index": 0
+        },
+        {
+          "raw": "25 Ё; 2i е ды 1 =a у",
+          "selected": "Ё 2i е ды =a у",
+          "confidence": 0.626,
+          "image_index": 1,
+          "roi_index": 0
+        },
+        {
+          "raw": "1 25 а Э БИ Г БЯ ШУИ Њ 20 7 БАРА ИИ 4",
+          "selected": "а Э БИ Г БЯ ШУИ Њ БАРА ИИ",
+          "confidence": 0.697,
+          "image_index": 2,
+          "roi_index": 0
+        },
+        {
+          "raw": "1 иши м",
+          "selected": "иши м",
+          "confidence": 0.594,
+          "image_index": 3,
+          "roi_index": 0
+        }
+      ],
+      "date_of_registration_extension": [
+        {
+          "raw": "в 9 тч 1 МЕД А, 5 з^ БИ 3 У^ Rr Аалыikя ДК й 2 Ащена- тит ахх 7 ахаsi мез Ё Тад РАМ #иедит#т:",
+          "selected": null,
+          "confidence": 0.562,
+          "image_index": 0,
+          "roi_index": 0
+        },
+        {
+          "raw": "г 0 ма Ӣ 7} ХТ. Ф тт 74 2 25 БО Р с. У",
+          "selected": null,
+          "confidence": 0.638,
+          "image_index": 1,
+          "roi_index": 0
+        },
+        {
+          "raw": "Л и БЕШ у Ќ ЁЕЪ ЗББ 1 Ӣ Н М Й В",
+          "selected": null,
+          "confidence": 0.676,
+          "image_index": 2,
+          "roi_index": 0
+        },
+        {
+          "raw": "яи 1 Ї ЧОШ йё",
+          "selected": null,
+          "confidence": 0.519,
+          "image_index": 3,
+          "roi_index": 0
+        }
+      ]
+    },
+    "date_candidates": []
+  },
+  "raw_ocr": [
+    {
+      "text": "ќ",
+      "confidence": 0.89,
+      "bbox": [
+        [
+          2456,
+          87
+        ],
+        [
+          2472,
+          87
+        ],
+        [
+          2472,
+          115
+        ],
+        [
+          2456,
+          115
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "щ",
+      "confidence": 0.71,
+      "bbox": [
+        [
+          627,
+          200
+        ],
+        [
+          645,
+          200
+        ],
+        [
+          645,
+          226
+        ],
+        [
+          627,
+          226
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "кг:",
+      "confidence": 0.42,
+      "bbox": [
+        [
+          1091,
+          205
+        ],
+        [
+          1206,
+          205
+        ],
+        [
+          1206,
+          254
+        ],
+        [
+          1091,
+          254
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "ьх",
+      "confidence": 0.72,
+      "bbox": [
+        [
+          1581,
+          206
+        ],
+        [
+          1618,
+          206
+        ],
+        [
+          1618,
+          230
+        ],
+        [
+          1581,
+          230
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "Ё",
+      "confidence": 0.96,
+      "bbox": [
+        [
+          1659,
+          277
+        ],
+        [
+          1665,
+          277
+        ],
+        [
+          1665,
+          282
+        ],
+        [
+          1659,
+          282
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "МИР",
+      "confidence": 0.73,
+      "bbox": [
+        [
+          2067,
+          297
+        ],
+        [
+          2117,
+          297
+        ],
+        [
+          2117,
+          319
+        ],
+        [
+          2067,
+          319
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "ло",
+      "confidence": 0.96,
+      "bbox": [
+        [
+          1440,
+          306
+        ],
+        [
+          1586,
+          306
+        ],
+        [
+          1586,
+          378
+        ],
+        [
+          1440,
+          378
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "корҳои",
+      "confidence": 0.95,
+      "bbox": [
+        [
+          946,
+          311
+        ],
+        [
+          1401,
+          311
+        ],
+        [
+          1401,
+          381
+        ],
+        [
+          946,
+          381
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "ха",
+      "confidence": 0.62,
+      "bbox": [
+        [
+          1554,
+          315
+        ],
+        [
+          1605,
+          315
+        ],
+        [
+          1605,
+          329
+        ],
+        [
+          1554,
+          329
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "[1",
+      "confidence": 0.8,
+      "bbox": [
+        [
+          2360,
+          320
+        ],
+        [
+          2457,
+          320
+        ],
+        [
+          2457,
+          373
+        ],
+        [
+          2360,
+          373
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "я",
+      "confidence": 0.88,
+      "bbox": [
+        [
+          1339,
+          322
+        ],
+        [
+          1353,
+          322
+        ],
+        [
+          1353,
+          338
+        ],
+        [
+          1339,
+          338
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "г",
+      "confidence": 0.89,
+      "bbox": [
+        [
+          1377,
+          323
+        ],
+        [
+          1394,
+          323
+        ],
+        [
+          1394,
+          337
+        ],
+        [
+          1377,
+          337
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "|1",
+      "confidence": 0.54,
+      "bbox": [
+        [
+          2416,
+          323
+        ],
+        [
+          2420,
+          323
+        ],
+        [
+          2420,
+          358
+        ],
+        [
+          2416,
+          358
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "27,",
+      "confidence": 0.74,
+      "bbox": [
+        [
+          1548,
+          375
+        ],
+        [
+          1628,
+          375
+        ],
+        [
+          1628,
+          408
+        ],
+        [
+          1548,
+          408
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "фот",
+      "confidence": 0.34,
+      "bbox": [
+        [
+          2131,
+          386
+        ],
+        [
+          2226,
+          386
+        ],
+        [
+          2226,
+          400
+        ],
+        [
+          2131,
+          400
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "он",
+      "confidence": 0.96,
+      "bbox": [
+        [
+          1726,
+          420
+        ],
+        [
+          1870,
+          420
+        ],
+        [
+          1870,
+          497
+        ],
+        [
+          1726,
+          497
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "иг:",
+      "confidence": 0.51,
+      "bbox": [
+        [
+          1905,
+          444
+        ],
+        [
+          1954,
+          444
+        ],
+        [
+          1954,
+          473
+        ],
+        [
+          1905,
+          473
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "Фе",
+      "confidence": 0.9,
+      "bbox": [
+        [
+          506,
+          445
+        ],
+        [
+          523,
+          445
+        ],
+        [
+          523,
+          462
+        ],
+        [
+          506,
+          462
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "2-6",
+      "confidence": 0.56,
+      "bbox": [
+        [
+          2279,
+          450
+        ],
+        [
+          2390,
+          450
+        ],
+        [
+          2390,
+          508
+        ],
+        [
+          2279,
+          508
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "ГА",
+      "confidence": 0.76,
+      "bbox": [
+        [
+          2070,
+          459
+        ],
+        [
+          2146,
+          459
+        ],
+        [
+          2146,
+          480
+        ],
+        [
+          2070,
+          480
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "2х",
+      "confidence": 0.65,
+      "bbox": [
+        [
+          2410,
+          478
+        ],
+        [
+          2508,
+          478
+        ],
+        [
+          2508,
+          552
+        ],
+        [
+          2410,
+          552
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "кат",
+      "confidence": 0.53,
+      "bbox": [
+        [
+          1949,
+          503
+        ],
+        [
+          2007,
+          503
+        ],
+        [
+          2007,
+          523
+        ],
+        [
+          1949,
+          523
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "т.",
+      "confidence": 0.86,
+      "bbox": [
+        [
+          1334,
+          515
+        ],
+        [
+          1366,
+          515
+        ],
+        [
+          1366,
+          529
+        ],
+        [
+          1334,
+          529
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "чаи",
+      "confidence": 0.46,
+      "bbox": [
+        [
+          392,
+          538
+        ],
+        [
+          419,
+          538
+        ],
+        [
+          419,
+          571
+        ],
+        [
+          392,
+          571
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "чт",
+      "confidence": 0.9,
+      "bbox": [
+        [
+          2110,
+          541
+        ],
+        [
+          2148,
+          541
+        ],
+        [
+          2148,
+          553
+        ],
+        [
+          2110,
+          553
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "мА.",
+      "confidence": 0.58,
+      "bbox": [
+        [
+          1791,
+          547
+        ],
+        [
+          1867,
+          547
+        ],
+        [
+          1867,
+          566
+        ],
+        [
+          1791,
+          566
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "т^",
+      "confidence": 0.81,
+      "bbox": [
+        [
+          2049,
+          552
+        ],
+        [
+          2097,
+          552
+        ],
+        [
+          2097,
+          572
+        ],
+        [
+          2049,
+          572
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "ВАРАКАИ БАКАЙДГИРЙ",
+      "confidence": 0.983,
+      "bbox": [
+        [
+          176,
+          554
+        ],
+        [
+          1344,
+          554
+        ],
+        [
+          1344,
+          702
+        ],
+        [
+          176,
+          702
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "чат",
+      "confidence": 0.37,
+      "bbox": [
+        [
+          697,
+          564
+        ],
+        [
+          802,
+          564
+        ],
+        [
+          802,
+          587
+        ],
+        [
+          697,
+          587
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "ами",
+      "confidence": 0.29,
+      "bbox": [
+        [
+          1781,
+          564
+        ],
+        [
+          1845,
+          564
+        ],
+        [
+          1845,
+          594
+        ],
+        [
+          1781,
+          594
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "{РЙi",
+      "confidence": 0.337,
+      "bbox": [
+        [
+          1152,
+          572
+        ],
+        [
+          1332,
+          572
+        ],
+        [
+          1332,
+          683
+        ],
+        [
+          1152,
+          683
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "М.",
+      "confidence": 0.55,
+      "bbox": [
+        [
+          1366,
+          573
+        ],
+        [
+          1409,
+          573
+        ],
+        [
+          1409,
+          611
+        ],
+        [
+          1366,
+          611
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "i¢",
+      "confidence": 0.76,
+      "bbox": [
+        [
+          1516,
+          591
+        ],
+        [
+          1568,
+          591
+        ],
+        [
+          1568,
+          621
+        ],
+        [
+          1516,
+          621
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "чЕ",
+      "confidence": 0.8,
+      "bbox": [
+        [
+          2062,
+          650
+        ],
+        [
+          2096,
+          650
+        ],
+        [
+          2096,
+          657
+        ],
+        [
+          2062,
+          657
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "АЦИМ Я D ;",
+      "confidence": 0.19,
+      "bbox": [
+        [
+          1152,
+          653
+        ],
+        [
+          1820,
+          653
+        ],
+        [
+          1820,
+          789
+        ],
+        [
+          1152,
+          789
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "6 8",
+      "confidence": 0.942,
+      "bbox": [
+        [
+          2011,
+          666
+        ],
+        [
+          2132,
+          642
+        ],
+        [
+          2143,
+          726
+        ],
+        [
+          2022,
+          751
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "2.",
+      "confidence": 0.85,
+      "bbox": [
+        [
+          2414,
+          673
+        ],
+        [
+          2457,
+          673
+        ],
+        [
+          2457,
+          723
+        ],
+        [
+          2414,
+          723
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "ИШО",
+      "confidence": 0.43,
+      "bbox": [
+        [
+          1886,
+          701
+        ],
+        [
+          1922,
+          701
+        ],
+        [
+          1922,
+          721
+        ],
+        [
+          1886,
+          721
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "ЛИ",
+      "confidence": 0.59,
+      "bbox": [
+        [
+          1241,
+          706
+        ],
+        [
+          1330,
+          706
+        ],
+        [
+          1330,
+          730
+        ],
+        [
+          1241,
+          730
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "Љ!",
+      "confidence": 0.71,
+      "bbox": [
+        [
+          1407,
+          707
+        ],
+        [
+          1445,
+          707
+        ],
+        [
+          1445,
+          744
+        ],
+        [
+          1407,
+          744
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "корти бақайдгирӣ",
+      "confidence": 0.95,
+      "bbox": [
+        [
+          200,
+          713
+        ],
+        [
+          718,
+          713
+        ],
+        [
+          718,
+          801
+        ],
+        [
+          200,
+          801
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "REGISTRATION",
+      "confidence": 0.94,
+      "bbox": [
+        [
+          213,
+          808
+        ],
+        [
+          877,
+          808
+        ],
+        [
+          877,
+          880
+        ],
+        [
+          213,
+          880
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "17",
+      "confidence": 0.75,
+      "bbox": [
+        [
+          1312,
+          814
+        ],
+        [
+          1368,
+          814
+        ],
+        [
+          1368,
+          861
+        ],
+        [
+          1312,
+          861
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "о5",
+      "confidence": 0.675,
+      "bbox": [
+        [
+          1599,
+          832
+        ],
+        [
+          1765,
+          860
+        ],
+        [
+          1746,
+          948
+        ],
+        [
+          1580,
+          920
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "№0008561",
+      "confidence": 0.91,
+      "bbox": [
+        [
+          1285,
+          856
+        ],
+        [
+          1848,
+          856
+        ],
+        [
+          1848,
+          999
+        ],
+        [
+          1285,
+          999
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "шиносномаи",
+      "confidence": 0.939,
+      "bbox": [
+        [
+          179,
+          934
+        ],
+        [
+          948,
+          934
+        ],
+        [
+          948,
+          1079
+        ],
+        [
+          179,
+          1079
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "7;",
+      "confidence": 0.56,
+      "bbox": [
+        [
+          1390,
+          965
+        ],
+        [
+          1418,
+          965
+        ],
+        [
+          1418,
+          1019
+        ],
+        [
+          1390,
+          1019
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "[775",
+      "confidence": 0.56,
+      "bbox": [
+        [
+          1315,
+          984
+        ],
+        [
+          1413,
+          984
+        ],
+        [
+          1413,
+          1010
+        ],
+        [
+          1315,
+          1010
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "---------",
+      "confidence": 0.59,
+      "bbox": [
+        [
+          1772,
+          1011
+        ],
+        [
+          1973,
+          1011
+        ],
+        [
+          1973,
+          1020
+        ],
+        [
+          1772,
+          1020
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "67",
+      "confidence": 0.22,
+      "bbox": [
+        [
+          1304,
+          1019
+        ],
+        [
+          1340,
+          1049
+        ],
+        [
+          1312,
+          1082
+        ],
+        [
+          1277,
+          1052
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "ЗЕ",
+      "confidence": 0.58,
+      "bbox": [
+        [
+          2345,
+          1026
+        ],
+        [
+          2432,
+          1026
+        ],
+        [
+          2432,
+          1087
+        ],
+        [
+          2345,
+          1087
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "реза",
+      "confidence": 0.977,
+      "bbox": [
+        [
+          1489,
+          1032
+        ],
+        [
+          1848,
+          1032
+        ],
+        [
+          1848,
+          1203
+        ],
+        [
+          1489,
+          1203
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "ӯ?",
+      "confidence": 0.75,
+      "bbox": [
+        [
+          2085,
+          1034
+        ],
+        [
+          2166,
+          1034
+        ],
+        [
+          2166,
+          1056
+        ],
+        [
+          2085,
+          1056
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "ОО:",
+      "confidence": 0.42,
+      "bbox": [
+        [
+          2170,
+          1041
+        ],
+        [
+          2355,
+          1041
+        ],
+        [
+          2355,
+          1090
+        ],
+        [
+          2170,
+          1090
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "мм",
+      "confidence": 0.82,
+      "bbox": [
+        [
+          578,
+          1046
+        ],
+        [
+          675,
+          1046
+        ],
+        [
+          675,
+          1072
+        ],
+        [
+          578,
+          1072
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "реза",
+      "confidence": 0.997,
+      "bbox": [
+        [
+          1502,
+          1047
+        ],
+        [
+          1832,
+          1047
+        ],
+        [
+          1832,
+          1186
+        ],
+        [
+          1502,
+          1186
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "ша-",
+      "confidence": 0.62,
+      "bbox": [
+        [
+          1169,
+          1054
+        ],
+        [
+          1408,
+          1054
+        ],
+        [
+          1408,
+          1152
+        ],
+        [
+          1169,
+          1152
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "х^",
+      "confidence": 0.67,
+      "bbox": [
+        [
+          324,
+          1069
+        ],
+        [
+          382,
+          1069
+        ],
+        [
+          382,
+          1095
+        ],
+        [
+          324,
+          1095
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "г.",
+      "confidence": 0.89,
+      "bbox": [
+        [
+          2054,
+          1090
+        ],
+        [
+          2108,
+          1090
+        ],
+        [
+          2108,
+          1122
+        ],
+        [
+          2054,
+          1122
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "Б-",
+      "confidence": 0.8,
+      "bbox": [
+        [
+          0,
+          1113
+        ],
+        [
+          141,
+          1113
+        ],
+        [
+          141,
+          1235
+        ],
+        [
+          0,
+          1235
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "шаҳрванди",
+      "confidence": 0.977,
+      "bbox": [
+        [
+          192,
+          1131
+        ],
+        [
+          859,
+          1131
+        ],
+        [
+          859,
+          1253
+        ],
+        [
+          192,
+          1253
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "ИЕ",
+      "confidence": 0.6,
+      "bbox": [
+        [
+          703,
+          1144
+        ],
+        [
+          831,
+          1144
+        ],
+        [
+          831,
+          1231
+        ],
+        [
+          703,
+          1231
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "ГЕл",
+      "confidence": 0.54,
+      "bbox": [
+        [
+          1719,
+          1171
+        ],
+        [
+          1768,
+          1171
+        ],
+        [
+          1768,
+          1191
+        ],
+        [
+          1719,
+          1191
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "же",
+      "confidence": 0.64,
+      "bbox": [
+        [
+          119,
+          1205
+        ],
+        [
+          138,
+          1205
+        ],
+        [
+          138,
+          1221
+        ],
+        [
+          119,
+          1221
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "г?",
+      "confidence": 0.57,
+      "bbox": [
+        [
+          1567,
+          1205
+        ],
+        [
+          1650,
+          1205
+        ],
+        [
+          1650,
+          1244
+        ],
+        [
+          1567,
+          1244
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "¢e",
+      "confidence": 0.68,
+      "bbox": [
+        [
+          611,
+          1210
+        ],
+        [
+          654,
+          1210
+        ],
+        [
+          654,
+          1223
+        ],
+        [
+          611,
+          1223
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "тя",
+      "confidence": 0.87,
+      "bbox": [
+        [
+          2341,
+          1224
+        ],
+        [
+          2397,
+          1224
+        ],
+        [
+          2397,
+          1240
+        ],
+        [
+          2341,
+          1240
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "Назари Салмо",
+      "confidence": 0.802,
+      "bbox": [
+        [
+          757,
+          1228
+        ],
+        [
+          1750,
+          1228
+        ],
+        [
+          1750,
+          1414
+        ],
+        [
+          757,
+          1414
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "тлто",
+      "confidence": 0.31,
+      "bbox": [
+        [
+          1414,
+          1237
+        ],
+        [
+          1745,
+          1237
+        ],
+        [
+          1745,
+          1373
+        ],
+        [
+          1414,
+          1373
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "ў",
+      "confidence": 0.53,
+      "bbox": [
+        [
+          1222,
+          1251
+        ],
+        [
+          1286,
+          1251
+        ],
+        [
+          1286,
+          1397
+        ],
+        [
+          1222,
+          1397
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "22",
+      "confidence": 0.227,
+      "bbox": [
+        [
+          776,
+          1302
+        ],
+        [
+          1089,
+          1302
+        ],
+        [
+          1089,
+          1369
+        ],
+        [
+          776,
+          1369
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "ШЕР",
+      "confidence": 0.72,
+      "bbox": [
+        [
+          861,
+          1302
+        ],
+        [
+          868,
+          1302
+        ],
+        [
+          868,
+          1304
+        ],
+        [
+          861,
+          1304
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "Таш",
+      "confidence": 0.7,
+      "bbox": [
+        [
+          2024,
+          1392
+        ],
+        [
+          2090,
+          1392
+        ],
+        [
+          2090,
+          1424
+        ],
+        [
+          2024,
+          1424
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "лес",
+      "confidence": 0.34,
+      "bbox": [
+        [
+          1559,
+          1400
+        ],
+        [
+          1689,
+          1400
+        ],
+        [
+          1689,
+          1435
+        ],
+        [
+          1559,
+          1435
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "ӯ!",
+      "confidence": 0.56,
+      "bbox": [
+        [
+          1087,
+          1431
+        ],
+        [
+          1229,
+          1431
+        ],
+        [
+          1229,
+          1602
+        ],
+        [
+          1087,
+          1602
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "2s",
+      "confidence": 0.568,
+      "bbox": [
+        [
+          1944,
+          1435
+        ],
+        [
+          2146,
+          1435
+        ],
+        [
+          2146,
+          1593
+        ],
+        [
+          1944,
+          1593
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "РР",
+      "confidence": 0.62,
+      "bbox": [
+        [
+          2162,
+          1455
+        ],
+        [
+          2203,
+          1455
+        ],
+        [
+          2203,
+          1470
+        ],
+        [
+          2162,
+          1470
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "ч",
+      "confidence": 0.9,
+      "bbox": [
+        [
+          1181,
+          1481
+        ],
+        [
+          1203,
+          1481
+        ],
+        [
+          1203,
+          1500
+        ],
+        [
+          1181,
+          1500
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "ят",
+      "confidence": 0.66,
+      "bbox": [
+        [
+          760,
+          1482
+        ],
+        [
+          815,
+          1482
+        ],
+        [
+          815,
+          1499
+        ],
+        [
+          760,
+          1499
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "кк",
+      "confidence": 0.73,
+      "bbox": [
+        [
+          317,
+          1492
+        ],
+        [
+          351,
+          1492
+        ],
+        [
+          351,
+          1513
+        ],
+        [
+          317,
+          1513
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "Куи",
+      "confidence": 0.67,
+      "bbox": [
+        [
+          2103,
+          1498
+        ],
+        [
+          2140,
+          1498
+        ],
+        [
+          2140,
+          1518
+        ],
+        [
+          2103,
+          1518
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "Ғ",
+      "confidence": 0.81,
+      "bbox": [
+        [
+          21,
+          1504
+        ],
+        [
+          53,
+          1504
+        ],
+        [
+          53,
+          1546
+        ],
+        [
+          21,
+          1546
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "ТД",
+      "confidence": 0.66,
+      "bbox": [
+        [
+          1723,
+          1504
+        ],
+        [
+          1777,
+          1504
+        ],
+        [
+          1777,
+          1540
+        ],
+        [
+          1723,
+          1540
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "таns",
+      "confidence": 0.073,
+      "bbox": [
+        [
+          1003,
+          1558
+        ],
+        [
+          1274,
+          1558
+        ],
+        [
+          1274,
+          1668
+        ],
+        [
+          1003,
+          1668
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "таин,",
+      "confidence": 0.37,
+      "bbox": [
+        [
+          975,
+          1599
+        ],
+        [
+          1160,
+          1599
+        ],
+        [
+          1160,
+          1641
+        ],
+        [
+          975,
+          1641
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "02",
+      "confidence": 0.213,
+      "bbox": [
+        [
+          1251,
+          1599
+        ],
+        [
+          1302,
+          1599
+        ],
+        [
+          1302,
+          1641
+        ],
+        [
+          1251,
+          1641
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "РУ",
+      "confidence": 0.51,
+      "bbox": [
+        [
+          1368,
+          1641
+        ],
+        [
+          1401,
+          1641
+        ],
+        [
+          1401,
+          1666
+        ],
+        [
+          1368,
+          1666
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "ИЗ",
+      "confidence": 0.63,
+      "bbox": [
+        [
+          1028,
+          1650
+        ],
+        [
+          1069,
+          1650
+        ],
+        [
+          1069,
+          1699
+        ],
+        [
+          1028,
+          1699
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "9",
+      "confidence": 0.833,
+      "bbox": [
+        [
+          2333,
+          1661
+        ],
+        [
+          2357,
+          1661
+        ],
+        [
+          2357,
+          1694
+        ],
+        [
+          2333,
+          1694
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "a5",
+      "confidence": 0.77,
+      "bbox": [
+        [
+          1118,
+          1716
+        ],
+        [
+          1183,
+          1716
+        ],
+        [
+          1183,
+          1748
+        ],
+        [
+          1118,
+          1748
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "СД",
+      "confidence": 0.61,
+      "bbox": [
+        [
+          1268,
+          1764
+        ],
+        [
+          1301,
+          1764
+        ],
+        [
+          1301,
+          1797
+        ],
+        [
+          1268,
+          1797
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "740",
+      "confidence": 1.0,
+      "bbox": [
+        [
+          1753,
+          1785
+        ],
+        [
+          2044,
+          1785
+        ],
+        [
+          2044,
+          1951
+        ],
+        [
+          1753,
+          1951
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "#7",
+      "confidence": 0.92,
+      "bbox": [
+        [
+          1551,
+          1789
+        ],
+        [
+          1590,
+          1789
+        ],
+        [
+          1590,
+          1820
+        ],
+        [
+          1551,
+          1820
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "76",
+      "confidence": 0.68,
+      "bbox": [
+        [
+          1357,
+          1796
+        ],
+        [
+          1460,
+          1796
+        ],
+        [
+          1460,
+          1903
+        ],
+        [
+          1357,
+          1903
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "26",
+      "confidence": 0.994,
+      "bbox": [
+        [
+          1301,
+          1799
+        ],
+        [
+          1504,
+          1799
+        ],
+        [
+          1504,
+          1951
+        ],
+        [
+          1301,
+          1951
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "#е\"хяля:",
+      "confidence": 0.112,
+      "bbox": [
+        [
+          2042,
+          1813
+        ],
+        [
+          2119,
+          1813
+        ],
+        [
+          2119,
+          1832
+        ],
+        [
+          2042,
+          1832
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "ИД",
+      "confidence": 0.54,
+      "bbox": [
+        [
+          1871,
+          1832
+        ],
+        [
+          1915,
+          1832
+        ],
+        [
+          1915,
+          1876
+        ],
+        [
+          1871,
+          1876
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "~w",
+      "confidence": 0.51,
+      "bbox": [
+        [
+          2243,
+          1849
+        ],
+        [
+          2324,
+          1849
+        ],
+        [
+          2324,
+          1868
+        ],
+        [
+          2243,
+          1868
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "СНВ",
+      "confidence": 0.26,
+      "bbox": [
+        [
+          2222,
+          1862
+        ],
+        [
+          2518,
+          1862
+        ],
+        [
+          2518,
+          1920
+        ],
+        [
+          2222,
+          1920
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "5 {",
+      "confidence": 0.592,
+      "bbox": [
+        [
+          1337,
+          1864
+        ],
+        [
+          1429,
+          1851
+        ],
+        [
+          1434,
+          1915
+        ],
+        [
+          1343,
+          1928
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "be'",
+      "confidence": 0.7,
+      "bbox": [
+        [
+          1865,
+          1870
+        ],
+        [
+          1916,
+          1870
+        ],
+        [
+          1916,
+          1888
+        ],
+        [
+          1865,
+          1888
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "3",
+      "confidence": 0.955,
+      "bbox": [
+        [
+          1110,
+          1906
+        ],
+        [
+          1153,
+          1906
+        ],
+        [
+          1153,
+          1954
+        ],
+        [
+          1110,
+          1954
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "МИМ",
+      "confidence": 0.86,
+      "bbox": [
+        [
+          1100,
+          1914
+        ],
+        [
+          1146,
+          1914
+        ],
+        [
+          1146,
+          1926
+        ],
+        [
+          1100,
+          1926
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "тов",
+      "confidence": 0.49,
+      "bbox": [
+        [
+          2092,
+          1915
+        ],
+        [
+          2146,
+          1915
+        ],
+        [
+          2146,
+          1942
+        ],
+        [
+          2092,
+          1942
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "кт!",
+      "confidence": 0.79,
+      "bbox": [
+        [
+          177,
+          1940
+        ],
+        [
+          253,
+          1940
+        ],
+        [
+          253,
+          1958
+        ],
+        [
+          177,
+          1958
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "ыы",
+      "confidence": 0.52,
+      "bbox": [
+        [
+          952,
+          1943
+        ],
+        [
+          1007,
+          1943
+        ],
+        [
+          1007,
+          1971
+        ],
+        [
+          952,
+          1971
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "АТ;",
+      "confidence": 0.87,
+      "bbox": [
+        [
+          904,
+          1979
+        ],
+        [
+          955,
+          1979
+        ],
+        [
+          955,
+          1999
+        ],
+        [
+          904,
+          1999
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "ГХАРД",
+      "confidence": 0.85,
+      "bbox": [
+        [
+          1666,
+          2006
+        ],
+        [
+          1946,
+          2006
+        ],
+        [
+          1946,
+          2195
+        ],
+        [
+          1666,
+          2195
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "ИИДКАРДА",
+      "confidence": 0.617,
+      "bbox": [
+        [
+          1536,
+          2019
+        ],
+        [
+          2037,
+          2019
+        ],
+        [
+          2037,
+          2260
+        ],
+        [
+          1536,
+          2260
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "КАРДА ШУД",
+      "confidence": 0.866,
+      "bbox": [
+        [
+          1726,
+          2019
+        ],
+        [
+          2263,
+          2019
+        ],
+        [
+          2263,
+          2130
+        ],
+        [
+          1726,
+          2130
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "ш.",
+      "confidence": 0.85,
+      "bbox": [
+        [
+          1536,
+          2021
+        ],
+        [
+          1661,
+          2021
+        ],
+        [
+          1661,
+          2157
+        ],
+        [
+          1536,
+          2157
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "ШУ,",
+      "confidence": 0.67,
+      "bbox": [
+        [
+          2052,
+          2038
+        ],
+        [
+          2181,
+          2038
+        ],
+        [
+          2181,
+          2152
+        ],
+        [
+          2052,
+          2152
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "[йя",
+      "confidence": 0.314,
+      "bbox": [
+        [
+          460,
+          2041
+        ],
+        [
+          612,
+          2063
+        ],
+        [
+          595,
+          2154
+        ],
+        [
+          444,
+          2133
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "ТА.",
+      "confidence": 0.95,
+      "bbox": [
+        [
+          922,
+          2041
+        ],
+        [
+          1031,
+          2041
+        ],
+        [
+          1031,
+          2140
+        ],
+        [
+          922,
+          2140
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "йд ГИРИФ",
+      "confidence": 0.863,
+      "bbox": [
+        [
+          460,
+          2042
+        ],
+        [
+          962,
+          2042
+        ],
+        [
+          962,
+          2153
+        ],
+        [
+          460,
+          2153
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "ТАМяИА",
+      "confidence": 0.271,
+      "bbox": [
+        [
+          1273,
+          2044
+        ],
+        [
+          1740,
+          2044
+        ],
+        [
+          1740,
+          2131
+        ],
+        [
+          1273,
+          2131
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "#м",
+      "confidence": 0.644,
+      "bbox": [
+        [
+          1362,
+          2045
+        ],
+        [
+          1523,
+          2045
+        ],
+        [
+          1523,
+          2120
+        ],
+        [
+          1362,
+          2120
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "4,",
+      "confidence": 0.61,
+      "bbox": [
+        [
+          978,
+          2052
+        ],
+        [
+          1018,
+          2052
+        ],
+        [
+          1018,
+          2106
+        ],
+        [
+          978,
+          2106
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "ДТ",
+      "confidence": 0.72,
+      "bbox": [
+        [
+          1597,
+          2058
+        ],
+        [
+          1727,
+          2058
+        ],
+        [
+          1727,
+          2119
+        ],
+        [
+          1597,
+          2119
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "5.",
+      "confidence": 0.68,
+      "bbox": [
+        [
+          2116,
+          2058
+        ],
+        [
+          2131,
+          2058
+        ],
+        [
+          2131,
+          2073
+        ],
+        [
+          2116,
+          2073
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "Ла",
+      "confidence": 0.74,
+      "bbox": [
+        [
+          96,
+          2066
+        ],
+        [
+          147,
+          2066
+        ],
+        [
+          147,
+          2102
+        ],
+        [
+          96,
+          2102
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "П",
+      "confidence": 0.82,
+      "bbox": [
+        [
+          1349,
+          2098
+        ],
+        [
+          1355,
+          2098
+        ],
+        [
+          1355,
+          2110
+        ],
+        [
+          1349,
+          2110
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "Х7FЬ",
+      "confidence": 0.464,
+      "bbox": [
+        [
+          882,
+          2115
+        ],
+        [
+          1185,
+          2115
+        ],
+        [
+          1185,
+          2272
+        ],
+        [
+          882,
+          2272
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "АШ,",
+      "confidence": 0.75,
+      "bbox": [
+        [
+          1879,
+          2120
+        ],
+        [
+          1964,
+          2120
+        ],
+        [
+          1964,
+          2136
+        ],
+        [
+          1879,
+          2136
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "и.",
+      "confidence": 0.7,
+      "bbox": [
+        [
+          1684,
+          2122
+        ],
+        [
+          1726,
+          2122
+        ],
+        [
+          1726,
+          2168
+        ],
+        [
+          1684,
+          2168
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "НАЛ",
+      "confidence": 0.33,
+      "bbox": [
+        [
+          1711,
+          2144
+        ],
+        [
+          1804,
+          2144
+        ],
+        [
+          1804,
+          2191
+        ],
+        [
+          1711,
+          2191
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "НИ",
+      "confidence": 0.77,
+      "bbox": [
+        [
+          1562,
+          2145
+        ],
+        [
+          1613,
+          2145
+        ],
+        [
+          1613,
+          2190
+        ],
+        [
+          1562,
+          2190
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "т:",
+      "confidence": 0.55,
+      "bbox": [
+        [
+          1628,
+          2147
+        ],
+        [
+          1665,
+          2147
+        ],
+        [
+          1665,
+          2175
+        ],
+        [
+          1628,
+          2175
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "й ;",
+      "confidence": 0.52,
+      "bbox": [
+        [
+          1468,
+          2155
+        ],
+        [
+          1495,
+          2155
+        ],
+        [
+          1495,
+          2169
+        ],
+        [
+          1468,
+          2169
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "њар",
+      "confidence": 0.63,
+      "bbox": [
+        [
+          1116,
+          2157
+        ],
+        [
+          1165,
+          2157
+        ],
+        [
+          1165,
+          2177
+        ],
+        [
+          1116,
+          2177
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "КИ",
+      "confidence": 0.75,
+      "bbox": [
+        [
+          2331,
+          2171
+        ],
+        [
+          2361,
+          2171
+        ],
+        [
+          2361,
+          2205
+        ],
+        [
+          2331,
+          2205
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "шш",
+      "confidence": 0.56,
+      "bbox": [
+        [
+          1072,
+          2176
+        ],
+        [
+          1488,
+          2176
+        ],
+        [
+          1488,
+          2380
+        ],
+        [
+          1072,
+          2380
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "оот",
+      "confidence": 0.59,
+      "bbox": [
+        [
+          282,
+          2189
+        ],
+        [
+          345,
+          2189
+        ],
+        [
+          345,
+          2207
+        ],
+        [
+          282,
+          2207
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "см",
+      "confidence": 0.62,
+      "bbox": [
+        [
+          461,
+          2221
+        ],
+        [
+          564,
+          2221
+        ],
+        [
+          564,
+          2260
+        ],
+        [
+          461,
+          2260
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "ъе",
+      "confidence": 0.6,
+      "bbox": [
+        [
+          1892,
+          2238
+        ],
+        [
+          1983,
+          2238
+        ],
+        [
+          1983,
+          2259
+        ],
+        [
+          1892,
+          2259
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "a>",
+      "confidence": 0.56,
+      "bbox": [
+        [
+          1669,
+          2249
+        ],
+        [
+          1731,
+          2249
+        ],
+        [
+          1731,
+          2259
+        ],
+        [
+          1669,
+          2259
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "хшx",
+      "confidence": 0.094,
+      "bbox": [
+        [
+          2317,
+          2255
+        ],
+        [
+          2428,
+          2255
+        ],
+        [
+          2428,
+          2298
+        ],
+        [
+          2317,
+          2298
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "Зад",
+      "confidence": 0.29,
+      "bbox": [
+        [
+          460,
+          2261
+        ],
+        [
+          736,
+          2261
+        ],
+        [
+          736,
+          2380
+        ],
+        [
+          460,
+          2380
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "РЗ",
+      "confidence": 0.8,
+      "bbox": [
+        [
+          1645,
+          2286
+        ],
+        [
+          1658,
+          2286
+        ],
+        [
+          1658,
+          2293
+        ],
+        [
+          1645,
+          2293
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "тк",
+      "confidence": 0.78,
+      "bbox": [
+        [
+          2151,
+          2288
+        ],
+        [
+          2200,
+          2288
+        ],
+        [
+          2200,
+          2299
+        ],
+        [
+          2151,
+          2299
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "ин1",
+      "confidence": 0.102,
+      "bbox": [
+        [
+          1507,
+          2290
+        ],
+        [
+          1628,
+          2290
+        ],
+        [
+          1628,
+          2374
+        ],
+        [
+          1507,
+          2374
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "тоз",
+      "confidence": 0.66,
+      "bbox": [
+        [
+          769,
+          2296
+        ],
+        [
+          819,
+          2296
+        ],
+        [
+          819,
+          2306
+        ],
+        [
+          769,
+          2306
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "яв~",
+      "confidence": 0.424,
+      "bbox": [
+        [
+          1075,
+          2316
+        ],
+        [
+          1252,
+          2316
+        ],
+        [
+          1252,
+          2382
+        ],
+        [
+          1075,
+          2382
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "КД",
+      "confidence": 0.51,
+      "bbox": [
+        [
+          802,
+          2321
+        ],
+        [
+          843,
+          2321
+        ],
+        [
+          843,
+          2352
+        ],
+        [
+          802,
+          2352
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "хиш",
+      "confidence": 0.6,
+      "bbox": [
+        [
+          944,
+          2334
+        ],
+        [
+          1006,
+          2334
+        ],
+        [
+          1006,
+          2349
+        ],
+        [
+          944,
+          2349
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "[е",
+      "confidence": 0.56,
+      "bbox": [
+        [
+          1214,
+          2365
+        ],
+        [
+          1257,
+          2365
+        ],
+        [
+          1257,
+          2380
+        ],
+        [
+          1214,
+          2380
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "<2",
+      "confidence": 0.54,
+      "bbox": [
+        [
+          1618,
+          2368
+        ],
+        [
+          1669,
+          2368
+        ],
+        [
+          1669,
+          2412
+        ],
+        [
+          1618,
+          2412
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "БЕ",
+      "confidence": 0.82,
+      "bbox": [
+        [
+          2328,
+          2368
+        ],
+        [
+          2402,
+          2368
+        ],
+        [
+          2402,
+          2428
+        ],
+        [
+          2328,
+          2428
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "1 ;",
+      "confidence": 0.986,
+      "bbox": [
+        [
+          1125,
+          2378
+        ],
+        [
+          1209,
+          2378
+        ],
+        [
+          1209,
+          2429
+        ],
+        [
+          1125,
+          2429
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "'7",
+      "confidence": 0.5,
+      "bbox": [
+        [
+          992,
+          2380
+        ],
+        [
+          1043,
+          2380
+        ],
+        [
+          1043,
+          2419
+        ],
+        [
+          992,
+          2419
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "МЕ",
+      "confidence": 0.93,
+      "bbox": [
+        [
+          2368,
+          2387
+        ],
+        [
+          2401,
+          2387
+        ],
+        [
+          2401,
+          2418
+        ],
+        [
+          2368,
+          2418
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "ЕЕ",
+      "confidence": 0.56,
+      "bbox": [
+        [
+          2498,
+          2393
+        ],
+        [
+          2560,
+          2393
+        ],
+        [
+          2560,
+          2429
+        ],
+        [
+          2498,
+          2429
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "Чоя-mтikомп",
+      "confidence": 0.149,
+      "bbox": [
+        [
+          204,
+          2411
+        ],
+        [
+          760,
+          2411
+        ],
+        [
+          760,
+          2526
+        ],
+        [
+          204,
+          2526
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "ИБ",
+      "confidence": 0.53,
+      "bbox": [
+        [
+          2314,
+          2430
+        ],
+        [
+          2368,
+          2430
+        ],
+        [
+          2368,
+          2471
+        ],
+        [
+          2314,
+          2471
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "аъ",
+      "confidence": 0.87,
+      "bbox": [
+        [
+          1856,
+          2444
+        ],
+        [
+          1881,
+          2444
+        ],
+        [
+          1881,
+          2477
+        ],
+        [
+          1856,
+          2477
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "6/рх",
+      "confidence": 0.74,
+      "bbox": [
+        [
+          1474,
+          2491
+        ],
+        [
+          1765,
+          2491
+        ],
+        [
+          1765,
+          2731
+        ],
+        [
+          1474,
+          2731
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "125",
+      "confidence": 1.0,
+      "bbox": [
+        [
+          1791,
+          2501
+        ],
+        [
+          2040,
+          2501
+        ],
+        [
+          2040,
+          2660
+        ],
+        [
+          1791,
+          2660
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "вси",
+      "confidence": 0.51,
+      "bbox": [
+        [
+          1133,
+          2503
+        ],
+        [
+          1398,
+          2503
+        ],
+        [
+          1398,
+          2667
+        ],
+        [
+          1133,
+          2667
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "ХЕ",
+      "confidence": 0.78,
+      "bbox": [
+        [
+          1590,
+          2546
+        ],
+        [
+          1632,
+          2546
+        ],
+        [
+          1632,
+          2565
+        ],
+        [
+          1590,
+          2565
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "да",
+      "confidence": 0.91,
+      "bbox": [
+        [
+          1074,
+          2548
+        ],
+        [
+          1220,
+          2548
+        ],
+        [
+          1220,
+          2684
+        ],
+        [
+          1074,
+          2684
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "ЗБ",
+      "confidence": 0.51,
+      "bbox": [
+        [
+          826,
+          2552
+        ],
+        [
+          924,
+          2552
+        ],
+        [
+          924,
+          2631
+        ],
+        [
+          826,
+          2631
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "-ӣ",
+      "confidence": 0.81,
+      "bbox": [
+        [
+          1513,
+          2554
+        ],
+        [
+          1550,
+          2554
+        ],
+        [
+          1550,
+          2565
+        ],
+        [
+          1513,
+          2565
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "вой",
+      "confidence": 0.55,
+      "bbox": [
+        [
+          1229,
+          2563
+        ],
+        [
+          1552,
+          2563
+        ],
+        [
+          1552,
+          2684
+        ],
+        [
+          1229,
+          2684
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "НЕОЊЗ",
+      "confidence": 0.68,
+      "bbox": [
+        [
+          1133,
+          2580
+        ],
+        [
+          1214,
+          2580
+        ],
+        [
+          1214,
+          2597
+        ],
+        [
+          1133,
+          2597
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "ҷ",
+      "confidence": 0.88,
+      "bbox": [
+        [
+          2098,
+          2594
+        ],
+        [
+          2128,
+          2594
+        ],
+        [
+          2128,
+          2612
+        ],
+        [
+          2098,
+          2612
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "ВЕН",
+      "confidence": 0.4,
+      "bbox": [
+        [
+          949,
+          2604
+        ],
+        [
+          1037,
+          2604
+        ],
+        [
+          1037,
+          2646
+        ],
+        [
+          949,
+          2646
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "Раҳ",
+      "confidence": 0.38,
+      "bbox": [
+        [
+          543,
+          2615
+        ],
+        [
+          590,
+          2615
+        ],
+        [
+          590,
+          2651
+        ],
+        [
+          543,
+          2651
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "Ж: =",
+      "confidence": 0.115,
+      "bbox": [
+        [
+          1341,
+          2650
+        ],
+        [
+          1379,
+          2657
+        ],
+        [
+          1375,
+          2679
+        ],
+        [
+          1337,
+          2671
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "68",
+      "confidence": 0.35,
+      "bbox": [
+        [
+          408,
+          2667
+        ],
+        [
+          434,
+          2667
+        ],
+        [
+          434,
+          2676
+        ],
+        [
+          408,
+          2676
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "АД",
+      "confidence": 0.81,
+      "bbox": [
+        [
+          1379,
+          2672
+        ],
+        [
+          1430,
+          2672
+        ],
+        [
+          1430,
+          2696
+        ],
+        [
+          1379,
+          2696
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "Ол",
+      "confidence": 0.84,
+      "bbox": [
+        [
+          1347,
+          2678
+        ],
+        [
+          1565,
+          2678
+        ],
+        [
+          1565,
+          2835
+        ],
+        [
+          1347,
+          2835
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "Одиназода",
+      "confidence": 0.994,
+      "bbox": [
+        [
+          1357,
+          2704
+        ],
+        [
+          2068,
+          2704
+        ],
+        [
+          2068,
+          2876
+        ],
+        [
+          1357,
+          2876
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "#Яlль",
+      "confidence": 0.255,
+      "bbox": [
+        [
+          1372,
+          2713
+        ],
+        [
+          1404,
+          2713
+        ],
+        [
+          1404,
+          2725
+        ],
+        [
+          1372,
+          2725
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "{2",
+      "confidence": 0.56,
+      "bbox": [
+        [
+          1675,
+          2751
+        ],
+        [
+          1793,
+          2751
+        ],
+        [
+          1793,
+          2834
+        ],
+        [
+          1675,
+          2834
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "ййд",
+      "confidence": 0.42,
+      "bbox": [
+        [
+          1108,
+          2753
+        ],
+        [
+          1176,
+          2753
+        ],
+        [
+          1176,
+          2790
+        ],
+        [
+          1108,
+          2790
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "Де",
+      "confidence": 0.83,
+      "bbox": [
+        [
+          1933,
+          2756
+        ],
+        [
+          2018,
+          2756
+        ],
+        [
+          2018,
+          2825
+        ],
+        [
+          1933,
+          2825
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "a7",
+      "confidence": 0.54,
+      "bbox": [
+        [
+          665,
+          2765
+        ],
+        [
+          731,
+          2765
+        ],
+        [
+          731,
+          2787
+        ],
+        [
+          665,
+          2787
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "НОЗИР",
+      "confidence": 1.0,
+      "bbox": [
+        [
+          212,
+          2768
+        ],
+        [
+          531,
+          2768
+        ],
+        [
+          531,
+          2891
+        ],
+        [
+          212,
+          2891
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "те",
+      "confidence": 0.9,
+      "bbox": [
+        [
+          2223,
+          2780
+        ],
+        [
+          2266,
+          2780
+        ],
+        [
+          2266,
+          2796
+        ],
+        [
+          2223,
+          2796
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "ке",
+      "confidence": 0.7,
+      "bbox": [
+        [
+          1236,
+          2823
+        ],
+        [
+          1308,
+          2823
+        ],
+        [
+          1308,
+          2857
+        ],
+        [
+          1236,
+          2857
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "ФА",
+      "confidence": 0.94,
+      "bbox": [
+        [
+          804,
+          2844
+        ],
+        [
+          852,
+          2844
+        ],
+        [
+          852,
+          2869
+        ],
+        [
+          804,
+          2869
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "ае",
+      "confidence": 0.52,
+      "bbox": [
+        [
+          2171,
+          2844
+        ],
+        [
+          2237,
+          2844
+        ],
+        [
+          2237,
+          2869
+        ],
+        [
+          2171,
+          2869
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "паи",
+      "confidence": 0.49,
+      "bbox": [
+        [
+          2132,
+          2845
+        ],
+        [
+          2166,
+          2845
+        ],
+        [
+          2166,
+          2848
+        ],
+        [
+          2132,
+          2848
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "еоa ;",
+      "confidence": 0.172,
+      "bbox": [
+        [
+          1077,
+          2864
+        ],
+        [
+          1280,
+          2864
+        ],
+        [
+          1280,
+          2924
+        ],
+        [
+          1077,
+          2924
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "ас",
+      "confidence": 0.61,
+      "bbox": [
+        [
+          1347,
+          2873
+        ],
+        [
+          1384,
+          2873
+        ],
+        [
+          1384,
+          2896
+        ],
+        [
+          1347,
+          2896
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "Э",
+      "confidence": 0.92,
+      "bbox": [
+        [
+          2084,
+          2919
+        ],
+        [
+          2137,
+          2919
+        ],
+        [
+          2137,
+          2996
+        ],
+        [
+          2084,
+          2996
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "То,",
+      "confidence": 0.34,
+      "bbox": [
+        [
+          763,
+          2924
+        ],
+        [
+          857,
+          2924
+        ],
+        [
+          857,
+          2938
+        ],
+        [
+          763,
+          2938
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "21",
+      "confidence": 0.854,
+      "bbox": [
+        [
+          1844,
+          2945
+        ],
+        [
+          1955,
+          2945
+        ],
+        [
+          1955,
+          3045
+        ],
+        [
+          1844,
+          3045
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "é",
+      "confidence": 0.7,
+      "bbox": [
+        [
+          372,
+          2960
+        ],
+        [
+          392,
+          2960
+        ],
+        [
+          392,
+          2988
+        ],
+        [
+          372,
+          2988
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "Ѕ",
+      "confidence": 0.86,
+      "bbox": [
+        [
+          1136,
+          2981
+        ],
+        [
+          1146,
+          2981
+        ],
+        [
+          1146,
+          2994
+        ],
+        [
+          1136,
+          2994
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "2%",
+      "confidence": 0.87,
+      "bbox": [
+        [
+          897,
+          2982
+        ],
+        [
+          951,
+          2982
+        ],
+        [
+          951,
+          3009
+        ],
+        [
+          897,
+          3009
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "ШУИ",
+      "confidence": 0.71,
+      "bbox": [
+        [
+          2175,
+          3005
+        ],
+        [
+          2267,
+          3005
+        ],
+        [
+          2267,
+          3018
+        ],
+        [
+          2175,
+          3018
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "ото",
+      "confidence": 0.29,
+      "bbox": [
+        [
+          1743,
+          3013
+        ],
+        [
+          1846,
+          3013
+        ],
+        [
+          1846,
+          3024
+        ],
+        [
+          1743,
+          3024
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "20",
+      "confidence": 0.38,
+      "bbox": [
+        [
+          1535,
+          3022
+        ],
+        [
+          1603,
+          3022
+        ],
+        [
+          1603,
+          3048
+        ],
+        [
+          1535,
+          3048
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "ттт",
+      "confidence": 0.79,
+      "bbox": [
+        [
+          1443,
+          3033
+        ],
+        [
+          1489,
+          3033
+        ],
+        [
+          1489,
+          3041
+        ],
+        [
+          1443,
+          3041
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "чӣ",
+      "confidence": 0.78,
+      "bbox": [
+        [
+          1039,
+          3038
+        ],
+        [
+          1118,
+          3038
+        ],
+        [
+          1118,
+          3080
+        ],
+        [
+          1039,
+          3080
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "#iги",
+      "confidence": 0.278,
+      "bbox": [
+        [
+          1891,
+          3053
+        ],
+        [
+          1919,
+          3053
+        ],
+        [
+          1919,
+          3066
+        ],
+        [
+          1891,
+          3066
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "иши",
+      "confidence": 0.7,
+      "bbox": [
+        [
+          640,
+          3098
+        ],
+        [
+          677,
+          3098
+        ],
+        [
+          677,
+          3149
+        ],
+        [
+          640,
+          3149
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "ды",
+      "confidence": 0.65,
+      "bbox": [
+        [
+          2350,
+          3100
+        ],
+        [
+          2389,
+          3100
+        ],
+        [
+          2389,
+          3153
+        ],
+        [
+          2350,
+          3153
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "ит",
+      "confidence": 0.85,
+      "bbox": [
+        [
+          713,
+          3124
+        ],
+        [
+          781,
+          3124
+        ],
+        [
+          781,
+          3143
+        ],
+        [
+          713,
+          3143
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "чм",
+      "confidence": 0.997,
+      "bbox": [
+        [
+          578,
+          3131
+        ],
+        [
+          781,
+          3131
+        ],
+        [
+          781,
+          3251
+        ],
+        [
+          578,
+          3251
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "Ф^",
+      "confidence": 0.81,
+      "bbox": [
+        [
+          1286,
+          3137
+        ],
+        [
+          1346,
+          3137
+        ],
+        [
+          1346,
+          3167
+        ],
+        [
+          1286,
+          3167
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "=a",
+      "confidence": 0.62,
+      "bbox": [
+        [
+          2368,
+          3147
+        ],
+        [
+          2392,
+          3147
+        ],
+        [
+          2392,
+          3177
+        ],
+        [
+          2368,
+          3177
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "А,",
+      "confidence": 0.93,
+      "bbox": [
+        [
+          2141,
+          3208
+        ],
+        [
+          2152,
+          3208
+        ],
+        [
+          2152,
+          3221
+        ],
+        [
+          2141,
+          3221
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "з^",
+      "confidence": 0.7,
+      "bbox": [
+        [
+          1888,
+          3237
+        ],
+        [
+          1931,
+          3237
+        ],
+        [
+          1931,
+          3250
+        ],
+        [
+          1888,
+          3250
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "КН",
+      "confidence": 0.61,
+      "bbox": [
+        [
+          1212,
+          3243
+        ],
+        [
+          1303,
+          3243
+        ],
+        [
+          1303,
+          3306
+        ],
+        [
+          1212,
+          3306
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "б",
+      "confidence": 0.94,
+      "bbox": [
+        [
+          2394,
+          3243
+        ],
+        [
+          2400,
+          3243
+        ],
+        [
+          2400,
+          3251
+        ],
+        [
+          2394,
+          3251
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "7}",
+      "confidence": 0.87,
+      "bbox": [
+        [
+          873,
+          3247
+        ],
+        [
+          938,
+          3247
+        ],
+        [
+          938,
+          3321
+        ],
+        [
+          873,
+          3321
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "ю",
+      "confidence": 0.89,
+      "bbox": [
+        [
+          154,
+          3252
+        ],
+        [
+          172,
+          3252
+        ],
+        [
+          172,
+          3269
+        ],
+        [
+          154,
+          3269
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "Ӯ,",
+      "confidence": 0.54,
+      "bbox": [
+        [
+          1401,
+          3279
+        ],
+        [
+          1460,
+          3279
+        ],
+        [
+          1460,
+          3310
+        ],
+        [
+          1401,
+          3310
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "У^",
+      "confidence": 0.88,
+      "bbox": [
+        [
+          1828,
+          3281
+        ],
+        [
+          1842,
+          3281
+        ],
+        [
+          1842,
+          3308
+        ],
+        [
+          1828,
+          3308
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "Ярх",
+      "confidence": 0.079,
+      "bbox": [
+        [
+          433,
+          3286
+        ],
+        [
+          461,
+          3286
+        ],
+        [
+          461,
+          3304
+        ],
+        [
+          433,
+          3304
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "ДК",
+      "confidence": 0.62,
+      "bbox": [
+        [
+          2198,
+          3288
+        ],
+        [
+          2201,
+          3288
+        ],
+        [
+          2201,
+          3295
+        ],
+        [
+          2198,
+          3295
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "яя",
+      "confidence": 0.6,
+      "bbox": [
+        [
+          1532,
+          3336
+        ],
+        [
+          1561,
+          3336
+        ],
+        [
+          1561,
+          3393
+        ],
+        [
+          1532,
+          3393
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "ахх",
+      "confidence": 0.168,
+      "bbox": [
+        [
+          1950,
+          3354
+        ],
+        [
+          2126,
+          3354
+        ],
+        [
+          2126,
+          3443
+        ],
+        [
+          1950,
+          3443
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "ПИ",
+      "confidence": 0.93,
+      "bbox": [
+        [
+          80,
+          3366
+        ],
+        [
+          107,
+          3366
+        ],
+        [
+          107,
+          3386
+        ],
+        [
+          80,
+          3386
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "ахаsi",
+      "confidence": 0.051,
+      "bbox": [
+        [
+          1914,
+          3418
+        ],
+        [
+          2158,
+          3418
+        ],
+        [
+          2158,
+          3494
+        ],
+        [
+          1914,
+          3494
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "Ї",
+      "confidence": 0.79,
+      "bbox": [
+        [
+          118,
+          3421
+        ],
+        [
+          123,
+          3421
+        ],
+        [
+          123,
+          3426
+        ],
+        [
+          118,
+          3426
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "Тад",
+      "confidence": 0.7,
+      "bbox": [
+        [
+          1039,
+          3434
+        ],
+        [
+          1081,
+          3434
+        ],
+        [
+          1081,
+          3466
+        ],
+        [
+          1039,
+          3466
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "с.",
+      "confidence": 0.51,
+      "bbox": [
+        [
+          1092,
+          3437
+        ],
+        [
+          1117,
+          3437
+        ],
+        [
+          1117,
+          3476
+        ],
+        [
+          1092,
+          3476
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "х?",
+      "confidence": 0.8,
+      "bbox": [
+        [
+          2491,
+          3491
+        ],
+        [
+          2560,
+          3491
+        ],
+        [
+          2560,
+          3552
+        ],
+        [
+          2491,
+          3552
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "WA's",
+      "confidence": 0.55,
+      "bbox": [
+        [
+          194,
+          3530
+        ],
+        [
+          291,
+          3530
+        ],
+        [
+          291,
+          3560
+        ],
+        [
+          194,
+          3560
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "шль",
+      "confidence": 0.09,
+      "bbox": [
+        [
+          378,
+          3531
+        ],
+        [
+          641,
+          3531
+        ],
+        [
+          641,
+          3615
+        ],
+        [
+          378,
+          3615
+        ]
+      ],
+      "roi_field": null
+    },
+    {
+      "text": "аа",
+      "confidence": 0.5,
+      "bbox": [
+        [
+          846,
+          3558
+        ],
+        [
+          914,
+          3558
+        ],
+        [
+          914,
+          3593
+        ],
+        [
+          846,
+          3593
+        ]
+      ],
+      "roi_field": null
+    }
+  ]
+}
