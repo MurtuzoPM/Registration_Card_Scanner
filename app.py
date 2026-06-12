@@ -4,7 +4,7 @@ import logging
 from flask import Flask, request, jsonify, render_template
 from config import Config
 from ocr_engine import (
-    validate_image, preprocess_image, OCRHandler, TextParser,
+    validate_image, preprocess_image, create_ocr_handler, TextParser,
     merge_ocr_blocks, merge_parsed_fields, extract_roi_fields,
     postprocess_fields,
 )
@@ -20,7 +20,7 @@ app.config.from_object(Config)
 app.config['UPLOAD_FOLDER'] = Config.UPLOAD_FOLDER
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
-ocr_handler = OCRHandler(
+ocr_handler = create_ocr_handler(
     languages=Config.OCR_LANGUAGES,
     fast_mode=Config.OCR_FAST_MODE,
 )

@@ -172,13 +172,42 @@ Edit `config.py` to customize:
 - **Server**: Host, port, debug mode
 - **Field Definitions**: Customize field keywords and patterns
 
+### Selecting an OCR engine
+
+The OCR engine is pluggable. Choose it with the `OCR_ENGINE` environment variable:
+
+| `OCR_ENGINE` | Engine | Install | Notes |
+|---|---|---|---|
+| `hybrid` (default) | Tesseract + EasyOCR | `requirements.txt` | CPU-friendly, current behaviour |
+| `paddleocr` | PaddleOCR PP-OCR | `pip install -r requirements-paddle.txt` | Stronger on dense Cyrillic print; CPU or GPU |
+
+```bash
+# Use PaddleOCR instead of the hybrid engine
+OCR_ENGINE=paddleocr python app.py
+```
+
+Both engines return the same block format, so the rest of the pipeline
+(TextParser, ROI extraction, post-processing) is unchanged.
+
+#### Chandra (experimental, end-to-end, GPU recommended)
+
+[Chandra](https://huggingface.co/datalab-to/chandra) is a vision-LLM that reads
+the whole card at once and returns the fields directly (it does not produce
+per-word boxes, so it is *not* used via `OCR_ENGINE`). Run it separately:
+
+```bash
+pip install -r requirements-chandra.txt
+python tools/extract_chandra.py training/images/card_001.png --device cuda \
+    --out training/reports/card_001_chandra.json
+```
+
 ### Environment Variables
 
 You can also set configuration via environment variables (using python-dotenv):
 
 ```bash
 OCR_LANGUAGES=ru,en
-OCR_ENGINE=easyocr
+OCR_ENGINE=hybrid          # hybrid (default) | paddleocr
 ENABLE_IMAGE_PREPROCESSING=true
 OCR_FAST_MODE=1
 OCR_USE_GPU=auto

@@ -23,7 +23,9 @@ class Config:
 
     # OCR settings — Russian + English for mixed Cyrillic/Latin text
     OCR_LANGUAGES = ['ru', 'en']
-    OCR_ENGINE = 'easyocr'
+    # Which engine to use: 'hybrid' (Tesseract+EasyOCR, default), 'paddleocr'.
+    # Override with the OCR_ENGINE environment variable.
+    OCR_ENGINE = os.environ.get('OCR_ENGINE', 'hybrid').strip().lower()
     ENABLE_IMAGE_PREPROCESSING = True
     # False = 3 preprocess variants + dual EasyOCR (slow, best accuracy on CPU)
     # True  = 2 variants + single EasyOCR pass (~2-3x faster)

@@ -1,0 +1,9 @@
+# PaddleOCR engine (stronger than EasyOCR on dense Cyrillic print).
+# Select it at runtime with:  OCR_ENGINE=paddleocr
+#
+# CPU:
+paddlepaddle>=2.6.0
+paddleocr>=2.7.0
+#
+# GPU (CUDA): replace paddlepaddle above with the matching GPU build, e.g.
+#   paddlepaddle-gpu>=2.6.0

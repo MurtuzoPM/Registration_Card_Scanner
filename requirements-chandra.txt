@@ -1,0 +1,8 @@
+# Chandra vision-LLM end-to-end field extractor (experimental, GPU recommended).
+# Used by ocr_engine/chandra_backend.py and tools/extract_chandra.py.
+transformers>=4.46.0
+torch>=2.1.0
+accelerate>=0.30.0
+pillow>=10.0.0
+# Optional: the official packaged pipeline
+# chandra-ocr

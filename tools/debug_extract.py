@@ -20,6 +20,7 @@ from config import Config  # noqa: E402
 from ocr_engine import (  # noqa: E402
     OCRHandler,
     TextParser,
+    create_ocr_handler,
     extract_roi_fields,
     merge_ocr_blocks,
     merge_parsed_fields,
@@ -51,7 +52,7 @@ def parse_image(image_path: Path, fast_mode: bool):
     if not ok:
         raise RuntimeError(f"Invalid image {image_path}: {msg}")
 
-    ocr_handler = OCRHandler(languages=Config.OCR_LANGUAGES, fast_mode=fast_mode)
+    ocr_handler = create_ocr_handler(languages=Config.OCR_LANGUAGES, fast_mode=fast_mode)
     text_parser = TextParser()
 
     processed_images = preprocess_image(
